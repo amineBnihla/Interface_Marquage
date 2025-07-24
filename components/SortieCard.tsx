@@ -3,54 +3,75 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Box, ChevronLeft, ChevronRight, Edit, Eye, Printer } from "lucide-react"
-import type { Client, Etiquette, Versement } from "@/api/api"
+import { Calibre, fetchEtiquettes, type Client, type Etiquette, type Versement } from "@/api/api"
 import type { SortieData, Template } from "@/types"
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { ModificationDialog } from "./ModificationDialog"
+import { PreviewDialog } from "./PreviewDialog"
 interface SortieCardProps {
    sortie: SortieData
   clients: Client[]
-  selectedClient: string
-  sortieLabels: Record<string, number>
-  sortieVersements: Record<string, string>
-  sortieTemplates: Record<string, string>
-  availableTemplates: Template[]
-  onClientChange: (sortieId: string, clientId: string) => void
-  onModificationClick: (sortieId: string) => void
-  onPreviewClick: (sortieId: string) => void
-  //  onEtiquetteChange: (sortieId: string, templateId: string) => void
-  // onLabelCountChange: (sortieId: string, increment: boolean) => void
-  // onVersementChange: (sortieId: string, increment: boolean) => void
-  sortieVersementDates: Record<string, string>
+   calibres:Calibre[]
   versements:Versement[]
 }
 
 export function SortieCard({
   sortie,
   clients,
-  selectedClient,
-  sortieLabels,
-  sortieVersements,
-  sortieTemplates,
-  availableTemplates,
-  onClientChange,
-  onModificationClick,
-  onPreviewClick,
-  //  onEtiquetteChange,
-  // onLabelCountChange,
-  // onVersementChange,
-  sortieVersementDates,
+calibres,
   versements
  // Add this prop
 }: SortieCardProps) {
   const [currentVersementIndex, setCurrentVersementIndex] = useState(0)
   const [currentPasIndex, setcurrentPasIndex] = useState(0)
   const [selectedEttiquete,setSelectedEttiquete] = useState<string>()
+  const [selectedClient,setSelectedClient] = useState<string>()
+  const [etiquettes, setEtiquettes] = useState<Etiquette[]>([])
+  const [showModificationDialog, setShowModificationDialog] = useState<string | null>(null)
+   const [showPreviewDialog, setShowPreviewDialog] = useState<string | null>(null)
   // Get current versement
   const currentVersement = versements[currentVersementIndex]
   const listeDesPas= sortie.listedespas.split(';')
   const nombreEtt = listeDesPas[currentPasIndex]
- 
+  function handleClientChange(idClient:string){
+   setSelectedClient(idClient)
+  }
+  const handlePrintEttiquete = (htmlGenerated: string, printQuantity: number) => {
+  const printContent = Array(printQuantity).fill(htmlGenerated).map((ett,index)=>ett.replace('{{ numero_batch }}',index)).join(
+    '<div style="page-break-after: always; height: 20px;"></div>'
+  );
+
+  const printWindow = window.open('', '_blank');
+  if (printWindow) {
+    printWindow.document.write(`
+      <html>
+        <head><title>Print</title></head>
+        <body>${printContent}</body>
+      </html>
+    `);
+    printWindow.document.close();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  }
+};
+    useEffect(() => {
+    const fetchClientEtiquettes = async () => {
+      if (!selectedClient) return
+
+      try {
+        const etiquettesData = await fetchEtiquettes([parseInt(selectedClient)])
+        setEtiquettes(etiquettesData)
+      } catch (err) {
+        // setError(err instanceof Error ? err.message : 'Failed to fetch etiquettes')
+      }
+    }
+
+    fetchClientEtiquettes()
+  }, [selectedClient])
   return (
+    <>
     <Card className="flex-shrink-0 w-80 border border-gray-200 shadow-sm bg-white">
       <div className="flex items-center justify-between p-4 border-b bg-gray-50">
         <Badge variant="outline" className="text-sm font-medium bg-white border-gray-300">
@@ -63,7 +84,7 @@ export function SortieCard({
             variant="ghost"
             size="sm"
             className="h-6 w-6 p-0 hover:bg-gray-100 ml-1"
-            onClick={() => onModificationClick(sortie.id)}
+            onClick={() => setShowModificationDialog(sortie.id)}
           >
             <Edit className="h-3 w-3 text-gray-600" />
           </Button>
@@ -97,7 +118,7 @@ export function SortieCard({
           <div className="text-sm text-gray-600 mb-2">Client</div>
           <Select 
             value={selectedClient} 
-            onValueChange={(value) => onClientChange(sortie.id, value)}
+            onValueChange={(value) => handleClientChange(value)}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Sélectionner un client" />
@@ -127,9 +148,9 @@ export function SortieCard({
               />
             </SelectTrigger>
             <SelectContent>
-              {availableTemplates.map((template) => (
-                <SelectItem key={template.id} value={template.id}>
-                  {template.name}
+              {etiquettes.map((template) => (
+                <SelectItem key={template.idtabetq} value={template.idtabetq.toString()}>
+                  {template.nom}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -216,7 +237,8 @@ export function SortieCard({
           <Button
             variant="default"
             className="flex-1 bg-[#015571] hover:bg-[#21A8D5] text-white"
-            disabled={!selectedClient}
+            disabled={!selectedClient || !selectedEttiquete}
+            onClick={handlePrintEttiquete}
           >
             <Printer className="h-4 w-4 mr-2" />
             Imprimer
@@ -225,13 +247,58 @@ export function SortieCard({
             variant="outline"
             size="sm"
             className="h-10 w-10 p-0 bg-transparent"
-            disabled={!selectedClient}
-            onClick={() => onPreviewClick(sortie.id)}
+            disabled={!selectedClient || !selectedEttiquete}
+            onClick={() => setShowPreviewDialog(sortie.id)}
           >
             <Eye className="h-4 w-4" />
           </Button>
         </div>
       </CardContent>
+      {selectedEttiquete}
     </Card>
+          {/* ModificationDialog */}
+              {showModificationDialog && (
+                <ModificationDialog
+                  isOpen={!!showModificationDialog}
+                  onClose={() => setShowModificationDialog(null)}
+                  sortie={sortie}
+                  initialData={{ caliber: calibres.find((c)=> c.codcal == sortie.code_calibre)?.idcalib.toString() || "", fruitCount: +sortie.nbrfruit }}
+                  availableCalibers={calibres}
+
+                />
+              )} 
+                  {/* PreviewDialog */}
+                
+              {showPreviewDialog && (
+                <PreviewDialog
+                  isOpen={!!showPreviewDialog}
+                  onClose={() => setShowPreviewDialog(null)}
+                  sortie={sortie}
+                  template={etiquettes
+                    .find(e => e.idtabetq.toString() === selectedEttiquete)
+                    ? {
+                        id: selectedEttiquete ? selectedEttiquete : "",
+                        name: etiquettes.find(e => e.idtabetq.toString() === selectedClient)?.nom ??  "N/A",
+                        preview: "/placeholder.svg",
+                        dimensions: "10cm x 7cm",
+                        fileType: "PDF"
+                      }
+                    : null
+                  }
+                  ettiquetteCount={+nombreEtt}
+                  printInfo={{
+                    etiquette_id:selectedEttiquete ? +selectedEttiquete : 0, 
+                  product_name: "",
+    variete:currentVersement.nom_variete,
+    date_palettisation: "",
+    emballage: sortie.code_emballage,
+    categorie:"",
+    versement_name:currentVersement.numver,
+    versement_date:currentVersement.dte_versement
+                  }}
+
+                />
+              )}
+    </>
   )
 }

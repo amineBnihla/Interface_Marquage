@@ -2,40 +2,68 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Eye } from "lucide-react"
-import type { LigneMarquage, Etiquette } from "@/api/api"
-
+import { type LigneMarquage, type Etiquette, generateEtiquette } from "@/api/api"
+import parse from 'html-react-parser'
 import type { SortieData, Template } from "@/types"
+import { useEffect, useState } from "react"
+import { DialogTitle } from "@radix-ui/react-dialog"
 interface PreviewDialogProps {
   isOpen: boolean
   onClose: () => void
   sortie: SortieData | null
   template: Template | null  // Updated to use Template type
+  ettiquetteCount:number,
   printInfo: {
-    labelCount: number
-    versement: string
-    date: string
+    etiquette_id :number,
+    product_name: string,
+    variete:string,
+    date_palettisation: string,
+    emballage: string,
+    categorie:string,
+     versement_name:string,
+    versement_date:string
   }
   loading?: boolean
-  error?: string | null
 }
 
 export function PreviewDialog({
   isOpen,
   onClose,
   sortie,
+  ettiquetteCount,
   template,
   printInfo,
-  loading,
-  error
 }: PreviewDialogProps) {
+
+    const [htmlGenerated,setHtmlGenerated] = useState()
+    const [loading,setLoading] = useState<boolean>()
+    const [error,setError] = useState<string>()
+  console.log(printInfo)
+     useEffect(() => {
+     const displayEttiquette = async () => {
+       try {
+        setLoading(true)
+         const etiquetteHtml = await generateEtiquette(printInfo)
+         console.log(etiquetteHtml)
+         setHtmlGenerated(etiquetteHtml)
+         setLoading(false)
+       } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to fetch etiquettes')
+         setLoading(false)
+       }
+     }
+ 
+     displayEttiquette()
+   }, [])
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] min-w-[800px] min-h-[500px] bg-white rounded-lg shadow-xl border-0 p-0 overflow-hidden">
         <div className="p-6 h-full flex flex-col overflow-hidden">
-          <div className="flex items-center justify-center mb-6 flex-shrink-0">
+          <DialogTitle className="flex items-center justify-center mb-6 flex-shrink-0">
             <Eye className="h-5 w-5 text-blue-600 mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Aperçu de l'Étiquette</h2>
-          </div>
+          </DialogTitle>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
@@ -55,12 +83,15 @@ export function PreviewDialog({
             <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
               {/* Left Side - Template Preview */}
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-lg p-4 min-h-0 overflow-hidden">
-                  <img
-                    src={template.preview || "/placeholder.svg"}
-                    alt={template.name}
-                    className="max-w-full max-h-full object-contain rounded border shadow-sm"
-                  />
+                <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-lg  min-h-0 overflow-hidden">
+            {htmlGenerated && (
+                    <div
+                      
+                      dangerouslySetInnerHTML={{ __html: htmlGenerated }}
+                    />
+                  )}
+                    {/* {htmlGenerated ? parse(htmlGenerated) : <p>No content to display</p>} */}
+                 
                 </div>
               </div>
 
@@ -91,15 +122,15 @@ export function PreviewDialog({
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Nombre d'étiquettes:</span>
-                        <span className="font-semibold">{printInfo.labelCount}</span>
+                        <span className="font-semibold">{ettiquetteCount}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Versement:</span>
-                        <span className="font-semibold">{printInfo.versement}</span>
+                        <span className="font-semibold">{printInfo.versement_name}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Date:</span>
-                        <span className="font-semibold">{printInfo.date}</span>
+                        <span>Date Versement:</span>
+                        <span className="font-semibold">{printInfo.versement_date}</span>
                       </div>
                     </div>
                   </div>

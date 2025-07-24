@@ -47,23 +47,21 @@ export default function LabelingInterface() {
   // Data state
   const [postes, setPostes] = useState<Poste[]>([])
   const [sorties, setSorties] = useState<Record<string, LigneMarquage[]>>({})
-  const [calibres, setCalibres] = useState<Calibre[]>([])
+  
   const [clients, setClients] = useState<Client[]>([])
   const [versements, setVersements] = useState<Versement[]>([])
-  const [etiquettes, setEtiquettes] = useState<Etiquette[]>([])
+  
 
   // UI state
   const [selectedStation, setSelectedStation] = useState("")
   const [selectedClient, setSelectedClient] = useState<string>("")
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
-  const [showModificationDialog, setShowModificationDialog] = useState<string | null>(null)
-  const [showPreviewDialog, setShowPreviewDialog] = useState<string | null>(null)
+
 
   // Sortie controls state
   const [sortieLabels, setSortieLabels] = useState<Record<string, number>>({})
   const [sortieVersements, setSortieVersements] = useState<Record<string, string>>({})
   const [sortieTemplates, setSortieTemplates] = useState<Record<string, string>>({})
-  const [modificationData, setModificationData] = useState<Record<string, { caliber: string; fruitCount: number }>>({})
 
   // Fetch initial data
   useEffect(() => {
@@ -91,16 +89,15 @@ export default function LabelingInterface() {
 
       try {
         setloadingSorties(true)
-        const [sortiesData, calibresData, clientsData, versementsData] = await Promise.all([
+        const [sortiesData,  clientsData, versementsData] = await Promise.all([
           fetchSortiesByPoste([selectedStation]),
-        fetchCalibres(),
           fetchClients(),
           fetchVersements()]) 
         setSorties(prev => ({
           ...prev,
           [selectedStation]: sortiesData
         }))
-             setCalibres(calibresData)
+        
         setClients(clientsData)
         setVersements(versementsData)
         setloadingSorties(false)
@@ -114,20 +111,7 @@ export default function LabelingInterface() {
   }, [selectedStation])
 
   // Fetch etiquettes when client changes
-  useEffect(() => {
-    const fetchClientEtiquettes = async () => {
-      if (!selectedClient) return
 
-      try {
-        const etiquettesData = await fetchEtiquettes([parseInt(selectedClient)])
-        setEtiquettes(etiquettesData)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch etiquettes')
-      }
-    }
-
-    fetchClientEtiquettes()
-  }, [selectedClient])
 
   // Essential handlers
   
@@ -153,35 +137,7 @@ export default function LabelingInterface() {
     }))
   }
 
-  const handleModificationSave = async (sortieId: string, data: { caliber: string; fruitCount: number }) => {
-    try {
-      const calibre = calibres.find(c => c.codcal === data.caliber)
-      if (!calibre) throw new Error('Invalid caliber')
-
-      await updateLigneCalibre({
-        idligne_marquage: parseInt(sortieId),
-        idcalib: calibre.idcalib,
-        nbrfruit: data.fruitCount
-      })
-
-      setModificationData(prev => ({
-        ...prev,
-        [sortieId]: data
-      }))
-      setShowModificationDialog(null)
-
-      // Refresh sorties
-      if (selectedStation) {
-        const sortiesData = await fetchSortiesByPoste([selectedStation])
-        setSorties(prev => ({
-          ...prev,
-          [selectedStation]: sortiesData
-        }))
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update sortie')
-    }
-  }
+ 
 
   const getCurrentSorties = (): SortieData[] => {
     const currentSorties = sorties[selectedStation] || []
@@ -325,68 +281,15 @@ const handleTemplateChange = (sortieId: string, templateId: string) => {
           </div>):(
             <>
         <SortiesSection
-                sorties={getCurrentSorties()}
-                clients={clients}
-                selectedClient={selectedClient}
-                sortieLabels={sortieLabels}
-                sortieVersements={sortieVersements}
-                sortieTemplates={sortieTemplates}
-                availableTemplates={etiquettes.map(e => ({
-                  id: e.idtabetq.toString(),
-                  name: e.nom,
-                  preview: "/placeholder.svg",
-                  dimensions: "10cm x 7cm",
-                  fileType: "PDF"
-                }))}
-                onClientChange={handleClientChange}
-                onModificationClick={(id) => setShowModificationDialog(id)}
-                onPreviewClick={(id) => setShowPreviewDialog(id)}
-                sortieVersementDates={{}}
-                versements={versements}
-                loading={loadingSorties}
-                error={error}
-              />
+    sorties={getCurrentSorties()}
+    clients={clients}
+    // onTemplateChange={handleTemplateChange}
+    // onLabelCountChange={handleLabelCountChange}
+    // onVersementChange={handleVersementChange}
+    versements={versements}  // Pass versements here
+    error={error}
+  />
 
-              {/* ModificationDialog */}
-              {showModificationDialog && (
-                <ModificationDialog
-                  isOpen={!!showModificationDialog}
-                  onClose={() => setShowModificationDialog(null)}
-                  onSave={handleModificationSave}
-                  sortieId={showModificationDialog}
-                  initialData={modificationData[showModificationDialog] || { caliber: "", fruitCount: 0 }}
-                  availableCalibers={calibres.map(c => c.codcal)}
-                  loading={loading}
-                  error={error}
-                />
-              )}
-
-              {/* PreviewDialog */}
-              {showPreviewDialog && (
-                <PreviewDialog
-                  isOpen={!!showPreviewDialog}
-                  onClose={() => setShowPreviewDialog(null)}
-                  sortie={getCurrentSorties().find(s => s.id === showPreviewDialog) || null}
-                  template={etiquettes
-                    .find(e => e.idtabetq.toString() === sortieTemplates[showPreviewDialog || ""])
-                    ? {
-                        id: etiquettes.find(e => e.idtabetq.toString() === sortieTemplates[showPreviewDialog || ""])!.idtabetq.toString(),
-                        name: etiquettes.find(e => e.idtabetq.toString() === sortieTemplates[showPreviewDialog || ""])!.nom,
-                        preview: "/placeholder.svg",
-                        dimensions: "10cm x 7cm",
-                        fileType: "PDF"
-                      }
-                    : null
-                  }
-                  printInfo={{
-                    labelCount: sortieLabels[showPreviewDialog || ""] || 8,
-                    versement: sortieVersements[showPreviewDialog || ""] || "Nº 10",
-                    date: new Date().toLocaleDateString("fr-FR")
-                  }}
-                  loading={loading}
-                  error={error}
-                />
-              )}
             </>
         
           ))

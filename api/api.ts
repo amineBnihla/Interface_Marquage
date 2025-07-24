@@ -130,23 +130,33 @@ export async function updateLigneCalibre(params: {
   idcalib: number;
   nbrfruit?: number;
 }): Promise<{ message: string }> {
-  const res = await api.post('packone/api/marquage/update_ligne', params);
+   const session_token = await getSessionCookie()
+  const res = await api.post('packone/api/marquage/update_ligne', params,{
+       headers:{
+      Authorization:session_token
+    }
+  });
   if (res.status !== 200) throw new Error('Failed to update ligne calibre');
   return res.data;
 }
 
-export async function generateLabel(params: {
-  etiquette_id: number;
-  emballage_marque: string;
-  origin: string;
-  caliber: string;
-  batch_number: string;
-  barcode_value: string;
-  variete: string;
-  client: string;
+
+
+export async function generateEtiquette(params: {
+etiquette_id :  number
+product_name :  string
+variete :  string
+date_palettisation : string
+emballage :   string
+categorie :  string
 }) {
-  const res = await api.post('packone/api/marquage/generate-label', params);
-  if (res.status !== 200) throw new Error('Failed to generate label');
+     const session_token = await getSessionCookie()
+  const res = await api.post('packone/api/marquage/generate_etiquette', params,{
+      headers:{
+      Authorization:session_token
+    }
+  });
+  if (res.status !== 200) throw new Error('Failed to generate Ettiquete');
   return res.data;
 }
 

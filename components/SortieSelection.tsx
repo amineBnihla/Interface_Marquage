@@ -4,31 +4,14 @@ import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, ArrowRight, RotateCcw } from "lucide-react"
 import { useRef, useEffect, useState } from "react"
 import { SortieCard } from "./SortieCard"
-import type { Client, Etiquette, Versement } from "@/api/api"
-import type { SortieData, Template } from "@/types"
+import { fetchCalibres, type Calibre, type Client, type Versement } from "@/api/api"
+import type { SortieData } from "@/types"
+
 interface SortiesSectionProps {
   sorties: SortieData[]
   clients: Client[]
-  selectedClient: string
-  sortieLabels: Record<string, number>
-  sortieVersements: Record<string, string>
-  sortieTemplates: Record<string, string>
-  availableTemplates: Array<{
-    id: string
-    name: string
-    preview: string
-    dimensions: string
-    fileType: string
-  }>
-  onClientChange: (sortieId: string, clientId: string) => void
-  onModificationClick: (sortieId: string) => void
-  onPreviewClick: (sortieId: string) => void
   loading?: boolean
   error?: string | null
-    // onTemplateChange: (sortieId: string, templateId: string) => void
-  // onLabelCountChange: (sortieId: string, increment: boolean) => void
-  // onVersementChange: (sortieId: string, increment: boolean) => void
-  sortieVersementDates: Record<string, string>
   versements:Versement[]
   
 }
@@ -36,27 +19,16 @@ interface SortiesSectionProps {
 export function SortiesSection({
   sorties,
   clients,
-  selectedClient,
-  sortieLabels,
-  sortieVersements,
-  sortieTemplates,
-  availableTemplates,
-  onClientChange,
-  onModificationClick,
-  onPreviewClick,
-    // onTemplateChange,
-  // onLabelCountChange,
-  // onVersementChange,
-  sortieVersementDates,
   loading,
-  error,
-  versements
+  versements,
 
 }: SortiesSectionProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [canScrollLeft, setCanScrollLeft] = useState(false)
   const [canScrollRight, setCanScrollRight] = useState(false)
-
+    const [calibres, setCalibres] = useState<Calibre[]>([])
+ 
+const [error, setError] = useState<string | null>(null)
   const checkScrollState = () => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
@@ -76,7 +48,20 @@ export function SortiesSection({
       }
     }
   }, [sorties])
+ useEffect(() => {
+    const getCalibres = async () => {
+  
+      try {
+       
+        const calibresData = await fetchCalibres()
+        setCalibres(calibresData)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch sorties')
+      }
+    }
 
+    getCalibres()
+  }, [])
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollBy({ left: -340, behavior: "smooth" })
@@ -88,8 +73,9 @@ export function SortiesSection({
       scrollContainerRef.current.scrollBy({ left: 340, behavior: "smooth" })
     }
   }
-console.log(availableTemplates)
+
   return (
+    <>
     <div className="mb-6">
       <Card className="bg-white border border-gray-200 shadow-sm">
         <CardHeader className="pb-2 border-b">
@@ -138,24 +124,19 @@ console.log(availableTemplates)
                  key={sortie.id}
       sortie={sortie}
       clients={clients}
-      selectedClient={selectedClient}
-      sortieLabels={sortieLabels}
-      sortieVersements={sortieVersements}
-      sortieTemplates={sortieTemplates}
-      availableTemplates={availableTemplates}
-      onClientChange={onClientChange}
-      onModificationClick={onModificationClick}
-      onPreviewClick={onPreviewClick}
-      // onEtiquetteChange={onEtiquetteChange}
-      // onLabelCountChange={onLabelCountChange}
-      // onVersementChange={onVersementChange}
-      sortieVersementDates={sortieVersementDates}
       versements={versements}
+      calibres={calibres}
               />
             ))}
           </div>
         </CardContent>
       </Card>
     </div>
+ 
+
+          
+    
+    
+    </>
   )
 }

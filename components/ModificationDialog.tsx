@@ -6,18 +6,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Edit, RotateCcw } from "lucide-react"
 import { useState, useEffect } from "react"
-import type { Calibre } from "@/api/api"
+import { updateLigneCalibre, type Calibre } from "@/api/api"
+import { SortieData } from "@/types"
 
 interface ModificationDialogProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (sortieId: string, data: { caliber: string; fruitCount: number }) => Promise<void>
-  sortieId: string | null
+  sortie: SortieData
   initialData: {
     caliber: string
     fruitCount: number
   }
-  availableCalibers: string[]
+  availableCalibers: Calibre[]
   loading?: boolean
   error?: string | null
 }
@@ -25,35 +25,39 @@ interface ModificationDialogProps {
 export function ModificationDialog({
   isOpen,
   onClose,
-  onSave,
-  sortieId,
+  sortie,
   initialData,
   availableCalibers,
-  loading,
-  error
+  loading
 }: ModificationDialogProps) {
   const [tempCaliber, setTempCaliber] = useState(initialData.caliber)
   const [tempFruitCount, setTempFruitCount] = useState(initialData.fruitCount)
   const [isSaving, setIsSaving] = useState(false)
-
+  const [error, setError] = useState<string | null>(null)
   useEffect(() => {
     setTempCaliber(initialData.caliber)
     setTempFruitCount(initialData.fruitCount)
   }, [initialData])
 
-  const handleSave = async () => {
-    if (!sortieId) return
+
+ const handleModificationSave = async () => {
     try {
-      setIsSaving(true)
-      await onSave(sortieId, { caliber: tempCaliber, fruitCount: tempFruitCount })
+      const calibre = availableCalibers.find(c => c.idcalib === +tempCaliber)
+      console.log(calibre)
+      if (!calibre) throw new Error('Invalid caliber')
+
+      await updateLigneCalibre({
+        idligne_marquage: parseInt(sortie.id),
+        idcalib: +tempCaliber,
+        nbrfruit: +tempFruitCount
+      })
+      sortie.code_calibre = calibre.codcal
+      sortie.nbrfruit = tempFruitCount.toString()
       onClose()
     } catch (err) {
-      // Error will be handled by parent component
-    } finally {
-      setIsSaving(false)
+      setError(err instanceof Error ? err.message : 'Failed to update sortie')
     }
   }
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md bg-white rounded-lg shadow-xl border-0 p-6">
@@ -82,8 +86,8 @@ export function ModificationDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {availableCalibers.map((caliber) => (
-                    <SelectItem key={caliber} value={caliber}>
-                      {caliber}
+                    <SelectItem key={caliber.idcalib} value={caliber.idcalib.toString()}>
+                      {caliber.codcal}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -126,7 +130,7 @@ export function ModificationDialog({
               Réinitialiser
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={()=>handleModificationSave()}
               className="flex-1 bg-[#015571] hover:bg-[#21A8D5] text-white"
               disabled={loading || isSaving}
             >
