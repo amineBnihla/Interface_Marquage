@@ -5,7 +5,7 @@ import { Eye } from "lucide-react"
 import { type LigneMarquage, type Etiquette, generateEtiquette } from "@/api/api"
 import parse from 'html-react-parser'
 import type { SortieData, Template } from "@/types"
-import { useEffect, useState } from "react"
+import { Dispatch, SetStateAction, useEffect, useState } from "react"
 import { DialogTitle } from "@radix-ui/react-dialog"
 interface PreviewDialogProps {
   isOpen: boolean
@@ -24,6 +24,9 @@ interface PreviewDialogProps {
     versement_date:string
   }
   loading?: boolean
+  error:string
+  stateEtiquetteHtml:string | null
+  
 }
 
 export function PreviewDialog({
@@ -33,28 +36,13 @@ export function PreviewDialog({
   ettiquetteCount,
   template,
   printInfo,
+  stateEtiquetteHtml,
+  loading,
+  error
 }: PreviewDialogProps) {
 
-    const [htmlGenerated,setHtmlGenerated] = useState()
-    const [loading,setLoading] = useState<boolean>()
-    const [error,setError] = useState<string>()
-  console.log(printInfo)
-     useEffect(() => {
-     const displayEttiquette = async () => {
-       try {
-        setLoading(true)
-         const etiquetteHtml = await generateEtiquette(printInfo)
-         console.log(etiquetteHtml)
-         setHtmlGenerated(etiquetteHtml)
-         setLoading(false)
-       } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to fetch etiquettes')
-         setLoading(false)
-       }
-     }
- 
-     displayEttiquette()
-   }, [])
+
+  
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -84,10 +72,10 @@ export function PreviewDialog({
               {/* Left Side - Template Preview */}
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
                 <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-lg  min-h-0 overflow-hidden">
-            {htmlGenerated && (
+            {stateEtiquetteHtml && (
                     <div
                       
-                      dangerouslySetInnerHTML={{ __html: htmlGenerated }}
+                      dangerouslySetInnerHTML={{ __html: stateEtiquetteHtml }}
                     />
                   )}
                     {/* {htmlGenerated ? parse(htmlGenerated) : <p>No content to display</p>} */}
@@ -101,19 +89,20 @@ export function PreviewDialog({
                   <div className="grid grid-cols-1 gap-3 p-4 bg-gray-50 rounded-lg">
                     <div>
                       <div className="text-sm text-gray-600 mb-1">Modèle</div>
+                    
                       <div className="font-semibold">{template.name}</div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600 mb-1">Dimensions</div>
-                      <div className="font-semibold">{template.dimensions}</div>
+                      <div className="font-semibold">{template.dimensions || "N/A"}</div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600 mb-1">Format</div>
-                      <div className="font-semibold">{template.fileType}</div>
+                      <div className="font-semibold">{template.fileType || "N/A"}</div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600 mb-1">Sortie</div>
-                      <div className="font-semibold">{sortie.code_emballage}</div>
+                      <div className="font-semibold">{sortie.code_emballage || "N/A"}</div>
                     </div>
                   </div>
 
@@ -122,15 +111,15 @@ export function PreviewDialog({
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Nombre d'étiquettes:</span>
-                        <span className="font-semibold">{ettiquetteCount}</span>
+                        <span className="font-semibold">{ettiquetteCount || "N/A"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Versement:</span>
-                        <span className="font-semibold">{printInfo.versement_name}</span>
+                        <span className="font-semibold">{printInfo.versement_name || "N/A"}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Date Versement:</span>
-                        <span className="font-semibold">{printInfo.versement_date}</span>
+                        <span className="font-semibold">{printInfo.versement_date || "N/A"}</span>
                       </div>
                     </div>
                   </div>

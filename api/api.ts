@@ -1,5 +1,5 @@
 import {api} from "@/api/index"
-import { getSessionCookie, setSessionCookie } from "@/lib/cookiesSetting"
+import { getSessionCookie, removeCookie, setSessionCookie } from "@/lib/cookiesSetting"
 import { headers } from "next/headers"
 // Types for API responses
 export interface Poste {
@@ -151,13 +151,18 @@ emballage :   string
 categorie :  string
 }) {
      const session_token = await getSessionCookie()
-  const res = await api.post('packone/api/marquage/generate_etiquette', params,{
-      headers:{
-      Authorization:session_token
-    }
-  });
-  if (res.status !== 200) throw new Error('Failed to generate Ettiquete');
-  return res.data;
+     try{
+       
+       const res = await api.post('packone/api/marquage/generate_etiquette', params,{
+           headers:{
+           Authorization:session_token
+         }
+       });
+       if (res.status !== 200) throw new Error('Failed to generate Ettiquete');
+       return {success:true,message:"Ettiquette genrated successfully",data:res.data};
+     }catch(error){
+   return {success:false,message:error?.response?.error.message || "Ettiquette genrated successfully"};
+     }
 }
 
 export async function loginUser({username,password}:{username:string,password:string}){
@@ -177,5 +182,11 @@ await setSessionCookie(authToken)
   console.log(error)
    return {succuss:false,message: error?.response.data.message || "Something went wrong"}
 }
+
+}
+
+export async function logoutUser(){
+ 
+    await removeCookie()
 
 }

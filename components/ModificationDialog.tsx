@@ -43,7 +43,6 @@ export function ModificationDialog({
  const handleModificationSave = async () => {
     try {
       const calibre = availableCalibers.find(c => c.idcalib === +tempCaliber)
-      console.log(calibre)
       if (!calibre) throw new Error('Invalid caliber')
 
       await updateLigneCalibre({
@@ -55,7 +54,8 @@ export function ModificationDialog({
       sortie.nbrfruit = tempFruitCount.toString()
       onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update sortie')
+      // console.log(err.message)
+      setError(err instanceof Error ? err?.message : 'Failed to update sortie')
     }
   }
   return (

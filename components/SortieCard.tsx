@@ -1,13 +1,17 @@
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Box, ChevronLeft, ChevronRight, Edit, Eye, Printer } from "lucide-react"
-import { Calibre, fetchEtiquettes, type Client, type Etiquette, type Versement } from "@/api/api"
+import { Calibre, fetchEtiquettes, generateEtiquette, type Client, type Etiquette, type Versement } from "@/api/api"
 import type { SortieData, Template } from "@/types"
 import { useEffect, useState } from "react"
 import { ModificationDialog } from "./ModificationDialog"
 import { PreviewDialog } from "./PreviewDialog"
+import { toast } from "sonner"
+
+import { getProduct } from "@/lib/getProductData"
 interface SortieCardProps {
    sortie: SortieData
   clients: Client[]
@@ -27,17 +31,35 @@ calibres,
   const [selectedEttiquete,setSelectedEttiquete] = useState<string>()
   const [selectedClient,setSelectedClient] = useState<string>()
   const [etiquettes, setEtiquettes] = useState<Etiquette[]>([])
+  const [products, setProducts] = useState<{[key:string] :string}>({})
   const [showModificationDialog, setShowModificationDialog] = useState<string | null>(null)
    const [showPreviewDialog, setShowPreviewDialog] = useState<string | null>(null)
+       const [htmlGenerated,setHtmlGenerated] = useState<string | null>("")
+
+         const [loading,setLoading] = useState<boolean>()
+         const [Ettiloading,setEttiloading] = useState<boolean>()
+    const [error,setError] = useState<string>("")
   // Get current versement
   const currentVersement = versements[currentVersementIndex]
   const listeDesPas= sortie.listedespas.split(';')
   const nombreEtt = listeDesPas[currentPasIndex]
+  const printInfo = {
+                    etiquette_id:selectedEttiquete ? +selectedEttiquete : 0, 
+                  product_name: products[currentVersement.nom_variete] || "" ,
+    variete:currentVersement.nom_variete,
+    date_palettisation: "",
+    emballage: sortie.code_emballage,
+    categorie:"",
+    versement_name:currentVersement.numver,
+    versement_date:currentVersement.dte_versement
+                  }
+
+
   function handleClientChange(idClient:string){
    setSelectedClient(idClient)
   }
-  const handlePrintEttiquete = (htmlGenerated: string, printQuantity: number) => {
-  const printContent = Array(printQuantity).fill(htmlGenerated).map((ett,index)=>ett.replace('{{ numero_batch }}',index)).join(
+  const handlePrintEttiquete = () => {
+  const printContent = Array(+nombreEtt).fill(htmlGenerated).map((ett,index)=>ett.replace('{{ numero_batch }}',index+1)).join(
     '<div style="page-break-after: always; height: 20px;"></div>'
   );
 
@@ -59,17 +81,57 @@ calibres,
     useEffect(() => {
     const fetchClientEtiquettes = async () => {
       if (!selectedClient) return
-
+        setEttiloading(true)
       try {
         const etiquettesData = await fetchEtiquettes([parseInt(selectedClient)])
         setEtiquettes(etiquettesData)
+                setEttiloading(false)
+
       } catch (err) {
-        // setError(err instanceof Error ? err.message : 'Failed to fetch etiquettes')
+        console.log(err)
+         setEttiloading(false)
+         toast.error(err instanceof Error ? err.message : 'Failed to fetch etiquettes')
       }
     }
 
     fetchClientEtiquettes()
   }, [selectedClient])
+
+  useEffect(()=>{
+     
+   async function fetchProducts(){
+    const productsRes =  await getProduct()
+    console.log(productsRes)
+    setProducts(productsRes)
+    }
+
+    fetchProducts()
+  },[])
+
+   
+     const displayEttiquette = async () => {
+    
+      setShowPreviewDialog(sortie.id)
+       try {
+        setLoading(true)
+         const etiquetteHtml = await generateEtiquette(printInfo)
+         if(!etiquetteHtml.success){
+          toast.error(etiquetteHtml.message)
+          return
+         }
+         console.log(etiquetteHtml.data)
+         setHtmlGenerated(etiquetteHtml.data)
+         setLoading(false)
+         setError("")
+       } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to Preview etiquettes')
+         setLoading(false)
+       }
+     }
+    function handleClosePreview(){
+    setShowPreviewDialog(null)
+    setError("")
+    }
   return (
     <>
     <Card className="flex-shrink-0 w-80 border border-gray-200 shadow-sm bg-white">
@@ -148,7 +210,12 @@ calibres,
               />
             </SelectTrigger>
             <SelectContent>
-              {etiquettes.map((template) => (
+              
+              {Ettiloading ? 
+               <div className="flex-1 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-900" />
+            </div>
+              : etiquettes.map((template) => (
                 <SelectItem key={template.idtabetq} value={template.idtabetq.toString()}>
                   {template.nom}
                 </SelectItem>
@@ -248,7 +315,7 @@ calibres,
             size="sm"
             className="h-10 w-10 p-0 bg-transparent"
             disabled={!selectedClient || !selectedEttiquete}
-            onClick={() => setShowPreviewDialog(sortie.id)}
+            onClick={displayEttiquette}
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -272,7 +339,7 @@ calibres,
               {showPreviewDialog && (
                 <PreviewDialog
                   isOpen={!!showPreviewDialog}
-                  onClose={() => setShowPreviewDialog(null)}
+                  onClose={handleClosePreview}
                   sortie={sortie}
                   template={etiquettes
                     .find(e => e.idtabetq.toString() === selectedEttiquete)
@@ -285,17 +352,11 @@ calibres,
                       }
                     : null
                   }
+                  stateEtiquetteHtml={htmlGenerated}
                   ettiquetteCount={+nombreEtt}
-                  printInfo={{
-                    etiquette_id:selectedEttiquete ? +selectedEttiquete : 0, 
-                  product_name: "",
-    variete:currentVersement.nom_variete,
-    date_palettisation: "",
-    emballage: sortie.code_emballage,
-    categorie:"",
-    versement_name:currentVersement.numver,
-    versement_date:currentVersement.dte_versement
-                  }}
+                  printInfo={printInfo}
+                  loading={loading}
+                  error={error}
 
                 />
               )}

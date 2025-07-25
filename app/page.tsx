@@ -23,9 +23,11 @@ import {
   type Client,
   type Calibre,
   type Versement,
-  type Etiquette
+  type Etiquette,
+  logoutUser
 } from "@/api/api"
 import type { SortieData } from "@/types"
+import { useRouter } from "next/navigation"
 
 interface Template {
   id: string
@@ -57,11 +59,9 @@ export default function LabelingInterface() {
   const [selectedClient, setSelectedClient] = useState<string>("")
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
 
-
+ const router = useRouter() 
   // Sortie controls state
-  const [sortieLabels, setSortieLabels] = useState<Record<string, number>>({})
-  const [sortieVersements, setSortieVersements] = useState<Record<string, string>>({})
-  const [sortieTemplates, setSortieTemplates] = useState<Record<string, string>>({})
+
 
   // Fetch initial data
   useEffect(() => {
@@ -116,26 +116,19 @@ export default function LabelingInterface() {
   // Essential handlers
   
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
+    await logoutUser()
+    router.push("/login")
     setSelectedStation("")
     setSelectedClient("")
-    setSortieLabels({})
-    setSortieVersements({})
-    setSortieTemplates({})
     setShowLogoutDialog(false)
+
   }
 
   const handleStationChange = (stationId: string) => {
     setSelectedStation(stationId)
   }
 
-  const handleClientChange = (sortieId: string, clientId: string) => {
-    setSelectedClient(clientId)
-    setSortieTemplates(prev => ({
-      ...prev,
-      [sortieId]: ""
-    }))
-  }
 
  
 
@@ -153,34 +146,8 @@ export default function LabelingInterface() {
     }))
   }
 // Add these new handlers after existing handlers
-const handleTemplateChange = (sortieId: string, templateId: string) => {
-  setSortieTemplates(prev => ({
-    ...prev,
-    [sortieId]: templateId
-  }))
-}
 
-// const handleLabelCountChange = (sortieId: string, increment: boolean) => {
-//   setSortieLabels(prev => {
-//     const current = prev[sortieId] || 8
-//     const newValue = increment ? current + 1 : current - 1
-//     return {
-//       ...prev,
-//       [sortieId]: Math.max(1, Math.min(999, newValue))
-//     }
-//   })
-// }
 
-// const handleVersementChange = (sortieId: string, increment: boolean) => {
-//   setSortieVersements(prev => {
-//     const current = parseInt((prev[sortieId] || "10").replace("Nº ", ""))
-//     const newValue = increment ? current + 1 : current - 1
-//     return {
-//       ...prev,
-//       [sortieId]: `Nº ${Math.max(1, newValue)}`
-//     }
-//   })
-// }
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -283,9 +250,6 @@ const handleTemplateChange = (sortieId: string, templateId: string) => {
         <SortiesSection
     sorties={getCurrentSorties()}
     clients={clients}
-    // onTemplateChange={handleTemplateChange}
-    // onLabelCountChange={handleLabelCountChange}
-    // onVersementChange={handleVersementChange}
     versements={versements}  // Pass versements here
     error={error}
   />

@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -64,7 +64,12 @@ export default function Login() {
 
   const handleHostChange = () => {
     // Handle host change logic here
-    console.log(`${protocol}://${hostAddress}`)
+    if(protocol && hostAddress){
+      toast.error("Merci de remplir tous les infos")
+      return
+    }
+    const Host = `${protocol}://${hostAddress}`
+    localStorage.setItem("BaseUrl",Host)
     setShowHostDialog(false)
   }
 
@@ -137,7 +142,7 @@ export default function Login() {
             </FormItem>
           )}
         />
-           
+         
 
             {/* Login Button */}
             <Button
@@ -150,6 +155,7 @@ export default function Login() {
 
             {/* Host Change Button */}
             <Dialog open={showHostDialog} onOpenChange={setShowHostDialog}>
+              <CardTitle></CardTitle>
               <DialogTrigger asChild>
                 <Button
                   type="button"
@@ -217,7 +223,7 @@ export default function Login() {
           </form>
              </Form>
           {/* Default Credentials Info */}
-
+        
           {/* <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-200">
             <p className="text-xs text-blue-700 text-center">
               <strong>Identifiants par défaut:</strong>
