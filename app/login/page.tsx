@@ -18,7 +18,6 @@ import { loginUser } from "@/api/api"
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,6 +25,7 @@ import {
 } from "@/components/ui/form"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { api } from "@/api"
 
 
 const formSchema = z.object({
@@ -51,26 +51,35 @@ export default function Login() {
   })
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
-   const {username,password} = values
-    // Simulate login delay
-    const res =  await loginUser({username, password})
-    if(res.success){
-        router.push('/')
-        return
+    try {
+      
+      const {username,password} = values
+       // Simulate login delay
+       const res =  await loginUser({username, password})
+       if(res.success){
+           router.push('/')
+           return
+          }
+          toast.error(res.message)
+          setIsLoading(false)
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Une erreur s'est produite lors de la connexion")
+          setIsLoading(false)
     }
-    toast.error(res.message)
-    setIsLoading(false)
   }
 
   const handleHostChange = () => {
     // Handle host change logic here
-    if(protocol && hostAddress){
+     console.log(protocol,hostAddress)
+    if(!protocol || !hostAddress){
       toast.error("Merci de remplir tous les infos")
       return
     }
     const Host = `${protocol}://${hostAddress}`
     localStorage.setItem("BaseUrl",Host)
+    api.defaults.baseURL = Host
     setShowHostDialog(false)
+    toast.success("Hôte modifie avec succès")
   }
 
   const handleHostReset = () => {
@@ -127,7 +136,7 @@ export default function Login() {
                 <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-orange-400" />
 
-                <Input  className="pl-10 h-12 border-gray-200 focus:border-[#015571] focus:ring-[#015571] bg-[#F8F8F9]"
+                <Input type={showPassword ? "text" : "password"} className="pl-10 h-12 border-gray-200 focus:border-[#015571] focus:ring-[#015571] bg-[#F8F8F9]"
  {...field} />
   <button
                   type="button"
@@ -177,7 +186,7 @@ export default function Login() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Protocole et Adresse</label>
                       <div className="flex items-center space-x-2">
-                        <Select value={protocol} onValueChange={setProtocol}>
+                        <Select value={protocol} onValueChange={(val)=>setProtocol(val)}>
                           <SelectTrigger className="w-24">
                             <SelectValue />
                           </SelectTrigger>

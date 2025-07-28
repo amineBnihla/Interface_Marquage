@@ -110,21 +110,23 @@ calibres,
 
    
      const displayEttiquette = async () => {
-    
+        setHtmlGenerated("")
+         setError("")
       setShowPreviewDialog(sortie.id)
        try {
         setLoading(true)
          const etiquetteHtml = await generateEtiquette(printInfo)
          if(!etiquetteHtml.success){
           toast.error(etiquetteHtml.message)
+          setLoading(false)
           return
          }
-         console.log(etiquetteHtml.data)
          setHtmlGenerated(etiquetteHtml.data)
          setLoading(false)
          setError("")
-       } catch (err) {
-          setError(err instanceof Error ? err.message : 'Failed to Preview etiquettes')
+        } catch (err) {
+       
+            setError(err instanceof Error ? err.message : 'Failed to Preview etiquettes')
          setLoading(false)
        }
      }
@@ -321,7 +323,7 @@ calibres,
           </Button>
         </div>
       </CardContent>
-      {selectedEttiquete}
+     
     </Card>
           {/* ModificationDialog */}
               {showModificationDialog && (

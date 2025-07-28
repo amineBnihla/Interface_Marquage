@@ -56,71 +56,45 @@ export interface Calibre {
 }
 
 export async function fetchPostes(): Promise<Poste[]> {
-  const session_token = await getSessionCookie()
-  const res = await api.post('packone/api/marquage/get_postes', {}, {
-    headers: {
-      Authorization: session_token
-    }
-  });
+ 
+  const res = await api.post('packone/api/marquage/get_postes', {});
   if (res.status !== 200) throw new Error('Failed to fetch postes');
   return res.data;
 }
 
 export async function fetchSortiesByPoste(postes: string[]): Promise<LigneMarquage[]> {
-    const session_token = await getSessionCookie()
-  const res = await api.post('packone/api/marquage/get_lignes_by_poste',{  numposte: postes}, {
-  
-      headers:{
-      Authorization:session_token
-    }
-  });
+   
+  const res = await api.post('packone/api/marquage/get_lignes_by_poste',{  numposte: postes});
   if (res.status !== 200) throw new Error('Failed to fetch sorties');
   return res.data;
 }
 
 export async function fetchVersements(): Promise<Versement[]> {
-    const session_token = await getSessionCookie()
-  const res = await api.post('packone/api/marquage/get_versement',{},{
-      headers:{
-      Authorization:session_token
-    }
-  });
+   
+  const res = await api.post('packone/api/marquage/get_versement',{});
   if (res.status !== 200) throw new Error('Failed to fetch versements');
   return res.data;
 }
 
 export async function fetchClients(): Promise<Client[]> {
-   const session_token = await getSessionCookie()
-  const res = await api.post('packone/api/marquage/get_clients',{},{
-    
-      headers:{
-      Authorization:session_token
-    }
-  });
+  
+  const res = await api.post('packone/api/marquage/get_clients',{});
   if (res.status !== 200) throw new Error('Failed to fetch clients');
   return res.data;
 }
 
 export async function fetchEtiquettes(clientIds: number[]): Promise<Etiquette[]> {
-     const session_token = await getSessionCookie()
+    
   const res = await api.post('packone/api/marquage/get_etiquettes', {
     idclfin: clientIds,
-  },{
-      headers:{
-      Authorization:session_token
-    }
   });
   if (res.status !== 200) throw new Error('Failed to fetch etiquettes');
   return res.data;
 }
 
 export async function fetchCalibres(): Promise<Calibre[]> {
-  const session_token = await getSessionCookie()
-  const res = await api.post('packone/api/marquage/get_calibre',{},{
-      headers:{
-      Authorization:session_token
-    }
-  });
+ 
+  const res = await api.post('packone/api/marquage/get_calibre',{});
   if (res.status !== 200) throw new Error('Failed to fetch calibres');
   return res.data;
 }
@@ -130,12 +104,8 @@ export async function updateLigneCalibre(params: {
   idcalib: number;
   nbrfruit?: number;
 }): Promise<{ message: string }> {
-   const session_token = await getSessionCookie()
-  const res = await api.post('packone/api/marquage/update_ligne', params,{
-       headers:{
-      Authorization:session_token
-    }
-  });
+  
+  const res = await api.post('packone/api/marquage/update_ligne', params);
   if (res.status !== 200) throw new Error('Failed to update ligne calibre');
   return res.data;
 }
@@ -150,18 +120,14 @@ date_palettisation : string
 emballage :   string
 categorie :  string
 }) {
-     const session_token = await getSessionCookie()
+    
      try{
        
-       const res = await api.post('packone/api/marquage/generate_etiquette', params,{
-           headers:{
-           Authorization:session_token
-         }
-       });
+       const res = await api.post('packone/api/marquage/generate_etiquette', params);
        if (res.status !== 200) throw new Error('Failed to generate Ettiquete');
        return {success:true,message:"Ettiquette genrated successfully",data:res.data};
      }catch(error){
-   return {success:false,message:error?.response?.error.message || "Ettiquette genrated successfully"};
+   return {success:false,message:error?.response?.data.message || "Ettiquette genrated successfully"};
      }
 }
 

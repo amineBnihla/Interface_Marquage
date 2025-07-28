@@ -2,10 +2,9 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Eye } from "lucide-react"
-import { type LigneMarquage, type Etiquette, generateEtiquette } from "@/api/api"
 import parse from 'html-react-parser'
 import type { SortieData, Template } from "@/types"
-import { Dispatch, SetStateAction, useEffect, useState } from "react"
+
 import { DialogTitle } from "@radix-ui/react-dialog"
 interface PreviewDialogProps {
   isOpen: boolean
@@ -71,15 +70,17 @@ export function PreviewDialog({
             <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
               {/* Left Side - Template Preview */}
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <div className="flex-1 flex items-center justify-center bg-gray-50 rounded-lg  min-h-0 overflow-hidden">
+                <div className="flex-1  bg-gray-50 rounded-lg  min-h-0 overflow-hidden">
+                 
+
             {stateEtiquetteHtml && (
                     <div
                       
                       dangerouslySetInnerHTML={{ __html: stateEtiquetteHtml }}
                     />
                   )}
-                    {/* {htmlGenerated ? parse(htmlGenerated) : <p>No content to display</p>} */}
-                 
+                    {/* {stateEtiquetteHtml ? parse(stateEtiquetteHtml) : <p>No content to display</p>} */}
+            
                 </div>
               </div>
 
