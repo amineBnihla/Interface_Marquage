@@ -93,3 +93,9 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 }
+@media print {
+  .zoom-print {
+    transform: scale(1.5);       /* scale up */
+    transform-origin: top left;  /* keep top-left alignment */
+  }
+}

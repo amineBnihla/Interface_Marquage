@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Box, ChevronLeft, ChevronRight, Edit, Eye, Printer } from "lucide-react"
+import { Box, ChevronLeft, ChevronRight, Edit, Eye, LoaderCircle, Printer } from "lucide-react"
 import { Calibre, fetchEtiquettes, generateEtiquette, type Client, type Etiquette, type Versement } from "@/api/api"
 import type { SortieData, Template } from "@/types"
 import { useEffect, useState } from "react"
@@ -37,6 +37,7 @@ calibres,
        const [htmlGenerated,setHtmlGenerated] = useState<string | null>("")
 
          const [loading,setLoading] = useState<boolean>()
+         const [loadingImprimer,setLoadingImrimer] = useState<boolean>()
          const [Ettiloading,setEttiloading] = useState<boolean>()
     const [error,setError] = useState<string>("")
   // Get current versement
@@ -58,25 +59,58 @@ calibres,
   function handleClientChange(idClient:string){
    setSelectedClient(idClient)
   }
-  const handlePrintEttiquete = () => {
-  const printContent = Array(+nombreEtt).fill(htmlGenerated).map((ett,index)=>ett.replace('{{ numero_batch }}',index+1)).join(
-    '<div style="page-break-after: always; height: 20px;"></div>'
-  );
+  const handlePrintEttiquete = async () => {
+    try {
+       setHtmlGenerated("")
+         setError("")
+        setLoadingImrimer(true)
+      const htlmGene = await generateEtiquetteSorie()
+      if (!htlmGene.success) {
+        toast.error(htlmGene.message)
+        setLoadingImrimer(false)
+        return
+      }
+      setHtmlGenerated(htlmGene.data)
+    const printContent = Array(+nombreEtt).fill(htlmGene.data).map((ett,index)=>ett.replace('{{ numero_batch }}',index+1)).join(
+      '<div style="page-break-after: always; height: 20px;"></div>'
+    );
+  console.log(printContent)
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+          <title>Print</title>
+          <style>
+            @media print {
+          body {
+            margin: 0;
+            zoom: 1.5; /* Works in Chrome */
+            /* transform: scale(1.5); transform-origin: top left; */ /* For Firefox */
+          }
+        }
+        body {
+          font-family: sans-serif;
+          padding: 20px;
+        }
+          </style>
+          </head>
+          <body>${printContent}</body>
+        </html>
+      `);
+      printWindow.document.close();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 500);
+    }
 
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(`
-      <html>
-        <head><title>Print</title></head>
-        <body>${printContent}</body>
-      </html>
-    `);
-    printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
-  }
+    setLoadingImrimer(false)
+    setError("")
+    } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to Preview etiquettes')
+      setLoadingImrimer(false)
+    }
 };
     useEffect(() => {
     const fetchClientEtiquettes = async () => {
@@ -107,17 +141,21 @@ calibres,
 
     fetchProducts()
   },[])
-
    
+  const generateEtiquetteSorie = async () => {
+const etiquetteHtml = await generateEtiquette(printInfo)
+return etiquetteHtml
+  }   
      const displayEttiquette = async () => {
         setHtmlGenerated("")
          setError("")
       setShowPreviewDialog(sortie.id)
        try {
         setLoading(true)
-         const etiquetteHtml = await generateEtiquette(printInfo)
+         const etiquetteHtml = await generateEtiquetteSorie()
          if(!etiquetteHtml.success){
           toast.error(etiquetteHtml.message)
+             setShowPreviewDialog("")
           setLoading(false)
           return
          }
@@ -127,6 +165,7 @@ calibres,
         } catch (err) {
        
             setError(err instanceof Error ? err.message : 'Failed to Preview etiquettes')
+               setShowPreviewDialog("")
          setLoading(false)
        }
      }
@@ -309,8 +348,16 @@ calibres,
             disabled={!selectedClient || !selectedEttiquete}
             onClick={handlePrintEttiquete}
           >
-            <Printer className="h-4 w-4 mr-2" />
+            {
+              loadingImprimer ?
+              <LoaderCircle className={`h-4 w-4 mr-2 animate-spin`} />
+              :
+              <>
+                <Printer className="h-4 w-4 mr-2" />
             Imprimer
+              </>
+            }
+          
           </Button>
           <Button
             variant="outline"

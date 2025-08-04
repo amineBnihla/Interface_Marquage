@@ -6,6 +6,7 @@ import parse from 'html-react-parser'
 import type { SortieData, Template } from "@/types"
 
 import { DialogTitle } from "@radix-ui/react-dialog"
+import { useRef, useState } from "react"
 interface PreviewDialogProps {
   isOpen: boolean
   onClose: () => void
@@ -40,6 +41,19 @@ export function PreviewDialog({
   error
 }: PreviewDialogProps) {
 
+ const containerRef = useRef<HTMLDivElement>(null);
+  const [zoom, setZoom] = useState(false);
+  const [transformOrigin, setTransformOrigin] = useState('top left');
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!containerRef.current) return;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+    setTransformOrigin(`${x}% ${y}%`);
+  };
 
   
 
@@ -70,12 +84,23 @@ export function PreviewDialog({
             <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
               {/* Left Side - Template Preview */}
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <div className="flex-1  bg-gray-50 rounded-lg  min-h-0 overflow-hidden">
+                <div className="flex-1  bg-gray-50 rounded-lg  min-h-0 overflow-hidden"
+                   ref={containerRef}
+      onMouseEnter={() => setZoom(true)}
+      onMouseLeave={() => setZoom(false)}
+      onMouseMove={handleMouseMove}
+                >
                  
 
             {stateEtiquetteHtml && (
-                    <div
-                      
+                 <div
+          className={`w-full h-full flex justify-center items-center  transition-transform duration-200 ease-out ${
+            zoom ? 'scale-[1.5] cursor-zoom-out' : 'scale-100 cursor-zoom-in'
+          }`}
+          style={{
+            transformOrigin: transformOrigin,
+            pointerEvents: zoom ? 'auto' : 'none', // allows interaction when zoomed
+          }}
                       dangerouslySetInnerHTML={{ __html: stateEtiquetteHtml }}
                     />
                   )}
