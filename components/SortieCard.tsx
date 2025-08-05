@@ -173,6 +173,8 @@ return etiquetteHtml
     setShowPreviewDialog(null)
     setError("")
     }
+    const currentEtti = etiquettes.find(e => e.idtabetq.toString() === selectedEttiquete)
+    console.log(currentEtti)
   return (
     <>
     <Card className="flex-shrink-0 w-80 border border-gray-200 shadow-sm bg-white">
@@ -390,11 +392,11 @@ return etiquetteHtml
                   isOpen={!!showPreviewDialog}
                   onClose={handleClosePreview}
                   sortie={sortie}
-                  template={etiquettes
-                    .find(e => e.idtabetq.toString() === selectedEttiquete)
+                  template={currentEtti
                     ? {
                         id: selectedEttiquete ? selectedEttiquete : "",
-                        name: etiquettes.find(e => e.idtabetq.toString() === selectedClient)?.nom ??  "N/A",
+                        
+                        name: currentEtti.nom ?? "N/A",
                         preview: "/placeholder.svg",
                         dimensions: "10cm x 7cm",
                         fileType: "PDF"

@@ -6,7 +6,7 @@ import parse from 'html-react-parser'
 import type { SortieData, Template } from "@/types"
 
 import { DialogTitle } from "@radix-ui/react-dialog"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 interface PreviewDialogProps {
   isOpen: boolean
   onClose: () => void
@@ -44,19 +44,70 @@ export function PreviewDialog({
  const containerRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(false);
   const [transformOrigin, setTransformOrigin] = useState('top left');
-
+  const [mousePosition, setMousePosition] = useState({ x: 50, y: 50 });
+const iframeRef = useRef<HTMLIFrameElement>(null);
   const handleMouseMove = (e: React.MouseEvent) => {
+    console.log("mouse move triggered")
     if (!containerRef.current) return;
-
+    
     const rect = containerRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-
+    console.log(`Mouse position: ${x}% ${y}%`);
     setTransformOrigin(`${x}% ${y}%`);
   };
+//  useEffect(() => {
+//     if (iframeRef.current && stateEtiquetteHtml) {
+//       const iframe = iframeRef.current;
+//       const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      
+//       if (doc) {
+//         // Clear and write new content
+//         doc.open();
+//         doc.write(
+//           `<html>
+//           <head>
+//             <style>
+//               body {
+//                 margin: 0;
+//                 padding: 0;
+//                 transition: transform 0.2s ease-out;
+//                 transform-origin: 50% 50%;
+//               }
+//             </style>
+//           </head>
+//           <body>
+//             ${stateEtiquetteHtml}
+//           </body>
+//         </html>
+//           `
+//         );
+//         doc.close();
+//       }
+//     }
+//   }, [stateEtiquetteHtml]);
+//   useEffect(() => {
+//   if (!zoom || !iframeRef.current) return;
 
-  
+//   const iframe = iframeRef.current;
+//   const doc = iframe.contentDocument || iframe.contentWindow?.document;
 
+//   if (doc?.body) {
+//     doc.body.style.transform = 'scale(1.5)';
+//     doc.body.style.transformOrigin = `${mousePosition.x}% ${mousePosition.y}%`;
+//   }
+// }, [zoom, mousePosition]);
+// useEffect(() => {
+//   if (!iframeRef.current) return;
+
+//   const doc = iframeRef.current.contentDocument || iframeRef.current.contentWindow?.document;
+//   if (!doc?.body) return;
+
+//   if (!zoom) {
+//     doc.body.style.transform = 'scale(1)';
+//     doc.body.style.transformOrigin = 'center center';
+//   }
+// }, [zoom]);
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] min-w-[800px] min-h-[500px] bg-white rounded-lg shadow-xl border-0 p-0 overflow-hidden">
@@ -84,10 +135,12 @@ export function PreviewDialog({
             <div className="flex gap-6 flex-1 min-h-0 overflow-hidden">
               {/* Left Side - Template Preview */}
               <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                <div className="flex-1  bg-gray-50 rounded-lg  min-h-0 overflow-hidden"
+                <div className="relative flex-1  bg-gray-50 rounded-lg  min-h-0 overflow-hidden"
                    ref={containerRef}
       onMouseEnter={() => setZoom(true)}
-      onMouseLeave={() => setZoom(false)}
+      onMouseLeave={() => {
+        setZoom(false) 
+        console.log('leave')}}
       onMouseMove={handleMouseMove}
                 >
                  
@@ -104,6 +157,23 @@ export function PreviewDialog({
                       dangerouslySetInnerHTML={{ __html: stateEtiquetteHtml }}
                     />
                   )}
+             
+      {/* <iframe
+        ref={iframeRef}
+         className={`w-full h-full flex justify-center items-center  transition-transform duration-200 ease-out ${
+            zoom ? 'scale-[1.5] cursor-zoom-out' : 'scale-100 cursor-zoom-in'
+          }`}
+          style={{
+            // transformOrigin: transformOrigin,
+            transformOrigin: zoom 
+            ? `${mousePosition.x}% ${mousePosition.y}%` 
+            : 'center center',
+             // allows interaction when zoomed
+          }}
+     
+        sandbox="allow-same-origin" // Security: prevent scripts
+      /> */}
+   
                     {/* {stateEtiquetteHtml ? parse(stateEtiquetteHtml) : <p>No content to display</p>} */}
             
                 </div>
