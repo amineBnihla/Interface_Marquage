@@ -395,7 +395,6 @@ return etiquetteHtml
                   template={currentEtti
                     ? {
                         id: selectedEttiquete ? selectedEttiquete : "",
-                        
                         name: currentEtti.nom ?? "N/A",
                         preview: "/placeholder.svg",
                         dimensions: "10cm x 7cm",
