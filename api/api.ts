@@ -112,14 +112,7 @@ export async function updateLigneCalibre(params: {
 
 
 
-export async function generateEtiquette(params: {
-etiquette_id :  number
-product_name :  string
-variete :  string
-date_palettisation : string
-emballage :   string
-categorie :  string
-}) {
+export async function generateEtiquette(params: any) {
     
      try{
        

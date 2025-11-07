@@ -35,7 +35,7 @@ calibres,
   const [showModificationDialog, setShowModificationDialog] = useState<string | null>(null)
    const [showPreviewDialog, setShowPreviewDialog] = useState<string | null>(null)
        const [htmlGenerated,setHtmlGenerated] = useState<string | null>("")
-
+ const [tempCaliber, setTempCaliber] = useState("")
          const [loading,setLoading] = useState<boolean>()
          const [loadingImprimer,setLoadingImrimer] = useState<boolean>()
          const [Ettiloading,setEttiloading] = useState<boolean>()
@@ -44,17 +44,45 @@ calibres,
   const currentVersement = versements[currentVersementIndex]
   const listeDesPas= sortie.listedespas.split(';')
   const nombreEtt = listeDesPas[currentPasIndex]
+  // const printInfo = {
+  //                   etiquette_id:selectedEttiquete ? +selectedEttiquete : 0, 
+  //                   emballage_marque: sortie.code_emballage,
+  //                   origin:"",
+  //                   caliber:tempCaliber,
+  //                   numero_batch:"",
+  //                   barcode_value:sortie.codebarre || "",
+  //                   variete:currentVersement.nom_variete,
+  //                   client:clients.find(c => c.idclfin.toString() === selectedClient)?.nom_client || "",
+  //                    poids_net: +sortie.poids || 0,
+  //                    categorie:"",
+  //                     producteur_code: currentVersement.code_producteur || "", 
+  // station_code: "",
+  // station_nom: "",
+  // ggn: "",
+  // emballage:sortie.code_emballage,
+  //   date_recolte: currentVersement.dte_versement,
+  // date_palettisation: "",
+  // traitement_description:sortie.traitement || "",
+  //                 product_name: products[currentVersement.nom_variete] || "" ,
+  //                 produit:"",
+  //                 num_lot:"",
+  //                 calibre:sortie.code_calibre,
+  //                 versement_name:currentVersement.numver,
+  //   versement_date:currentVersement.dte_versement
+  //                 }
+   const currentEtti = etiquettes.find(e => e.idtabetq.toString() === selectedEttiquete)
   const printInfo = {
                     etiquette_id:selectedEttiquete ? +selectedEttiquete : 0, 
-                  product_name: products[currentVersement.nom_variete] || "" ,
-    variete:currentVersement.nom_variete,
-    date_palettisation: "",
-    emballage: sortie.code_emballage,
-    categorie:"",
-    versement_name:currentVersement.numver,
-    versement_date:currentVersement.dte_versement
-                  }
+                    ...sortie,
+                    ...currentVersement,
+                    ...clients.find(c => c.idclfin.toString() === selectedClient),
+                    ...calibres.find((c)=> c.codcal == sortie.code_calibre),
+                    ...currentEtti
 
+                  }
+useEffect(()=>{
+console.log("Temp caliber changed:", tempCaliber)
+},[tempCaliber])
 
   function handleClientChange(idClient:string){
    setSelectedClient(idClient)
@@ -71,42 +99,175 @@ calibres,
         return
       }
       setHtmlGenerated(htlmGene.data)
-    const printContent = Array(+nombreEtt).fill(htlmGene.data).map((ett,index)=>ett.replace('{{ numero_batch }}',index+1)).join(
-      '<div style="page-break-after: always; height: 20px;"></div>'
-    );
-  console.log(printContent)
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-          <title>Print</title>
+      
+     const tickets = Array(+nombreEtt)
+      .fill(null)
+      .map((_, index) => {
+         let ticketHtml = htlmGene.data.replace('{{ numero_batch }}', index + 1);
+        
+        // Remove <style> tags and their content
+        ticketHtml = ticketHtml.replace(/<style[\s\S]*?<\/style>/gi, '');
+        
+        // Remove <meta> and <title> tags
+        ticketHtml = ticketHtml.replace(/<meta[\s\S]*?>/gi, '');
+        ticketHtml = ticketHtml.replace(/<title[\s\S]*?<\/title>/gi, '');
+        
+        return ticketHtml;
+      });
+
+    // Detect orientation
+    const tempDiv = document.createElement('div');
+    tempDiv.style.position = 'absolute';
+    tempDiv.style.visibility = 'hidden';
+    tempDiv.innerHTML = tickets[0] || '';
+    document.body.appendChild(tempDiv);
+    
+    const labelContainer = tempDiv.querySelector('.label-container');
+    let isLandscape = false;
+    
+    if (labelContainer) {
+      const computedStyle = window.getComputedStyle(labelContainer);
+      const width = parseFloat(computedStyle.width);
+      const height = parseFloat(computedStyle.height);
+      isLandscape = width > height;
+    }
+    
+    document.body.removeChild(tempDiv);
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Print Tickets</title>
           <style>
+          <style>
+            @page {
+              margin: 10mm;
+              size: auto;
+            }
+            
+            html, body {
+              font-family: sans-serif;
+              margin: 0 !important;
+              padding: 0 !important;
+              width: 100%;
+              background-color: white !important;
+            }
+            
+            /* Recreate label styles */
+            .label-container {
+              width: 6.8cm;
+              height: 4.3cm;
+              background-color: white;
+              box-sizing: border-box;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              padding: 0.1cm;
+              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+              margin: 0 auto;
+            }
+
+            .label-table {
+              width: 100%;
+              border-collapse: collapse;
+              border: 0.5px solid black;
+              font-size: 6px;
+              font-family: Arial, Helvetica, sans-serif;
+            }
+
+            .label-table td {
+              border: 0.25px solid black;
+              padding: 0.2em 0.4em;
+              vertical-align: middle;
+            }
+
+            .label-table td:nth-child(1),
+            .label-table td:nth-child(3) {
+              font-weight: bold;
+              width: 15%; 
+            }
+
+            .label-table td:nth-child(2),
+            .label-table td:nth-child(4) {
+              width: 35%;
+            }
+            
+            .full-width-cell {
+              text-align: center;
+              padding: 0.3em;
+            }
+            
+            .ticket-page {
+              width: fit-content;
+              min-width: 8cm;
+              padding: 20px;
+              page-break-after: always;
+              page-break-inside: avoid;
+              display: flex !important;
+              justify-content: center;
+              align-items: center;
+              box-sizing: border-box;
+             
+              margin: 0 auto;
+            }
+            
+            .ticket-page:last-child {
+              page-break-after: auto;
+            }
+            
             @media print {
-          body {
-            margin: 0;
-            zoom: 1.5; /* Works in Chrome */
-            /* transform: scale(1.5); transform-origin: top left; */ /* For Firefox */
-          }
-        }
-        body {
-          font-family: sans-serif;
-          padding: 20px;
-        }
+              @page {
+                margin: 10mm;
+                size: auto;
+              }
+              
+              .ticket-page {
+                page-break-after: always;
+                width: fit-content;
+                min-width: 8cm;
+                display: flex !important;
+              }
+              
+              .ticket-page:last-child {
+                page-break-after: auto;
+              }
+            }
           </style>
-          </head>
-          <body>${printContent}</body>
-        </html>
-      `);
-      printWindow.document.close();
-      setTimeout(() => {
-        printWindow.print();
-        printWindow.close();
-      }, 500);
+          </style>
+        </head>
+        <body>
+          ${tickets.map(ticket => `
+            <div class="ticket-page">${ticket}</div>
+          `).join('')}
+          <script>
+            window.onload = function() {
+              setTimeout(function() {
+                window.print();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+
+    // Create blob and open in new window
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+    
+    if (!printWindow) {
+      toast.error("Impossible d'ouvrir la fenêtre d'impression");
+      setLoadingImrimer(false);
+      return;
     }
 
-    setLoadingImrimer(false)
-    setError("")
+    // Clean up
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+      setLoadingImrimer(false);
+    }, 2000);
     } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to Preview etiquettes')
       setLoadingImrimer(false)
@@ -143,6 +304,7 @@ calibres,
   },[])
    
   const generateEtiquetteSorie = async () => {
+    console.log("Generating etiquette with info:", printInfo)
 const etiquetteHtml = await generateEtiquette(printInfo)
 return etiquetteHtml
   }   
@@ -173,7 +335,7 @@ return etiquetteHtml
     setShowPreviewDialog(null)
     setError("")
     }
-    const currentEtti = etiquettes.find(e => e.idtabetq.toString() === selectedEttiquete)
+   
     console.log(currentEtti)
   return (
     <>
@@ -380,7 +542,9 @@ return etiquetteHtml
                   isOpen={!!showModificationDialog}
                   onClose={() => setShowModificationDialog(null)}
                   sortie={sortie}
-                  initialData={{ caliber: calibres.find((c)=> c.codcal == sortie.code_calibre)?.idcalib.toString() || "", fruitCount: +sortie.nbrfruit }}
+                  tempCaliber={tempCaliber}
+                  setTempCaliber={setTempCaliber}
+                  initialData={{ caliber: tempCaliber || calibres.find((c)=> c.codcal == sortie.code_calibre)?.idcalib.toString() || "", fruitCount: +sortie.nbrfruit }}
                   availableCalibers={calibres}
 
                 />

@@ -13,16 +13,7 @@ interface PreviewDialogProps {
   sortie: SortieData | null
   template: Template | null  // Updated to use Template type
   ettiquetteCount:number,
-  printInfo: {
-    etiquette_id :number,
-    product_name: string,
-    variete:string,
-    date_palettisation: string,
-    emballage: string,
-    categorie:string,
-     versement_name:string,
-    versement_date:string
-  }
+  printInfo: any,
   loading?: boolean
   error:string
   stateEtiquetteHtml:string | null
@@ -56,6 +47,7 @@ const iframeRef = useRef<HTMLIFrameElement>(null);
     console.log(`Mouse position: ${x}% ${y}%`);
     setTransformOrigin(`${x}% ${y}%`);
   };
+  console.log(printInfo)
 //  useEffect(() => {
 //     if (iframeRef.current && stateEtiquetteHtml) {
 //       const iframe = iframeRef.current;
@@ -108,7 +100,20 @@ const iframeRef = useRef<HTMLIFrameElement>(null);
 //     doc.body.style.transformOrigin = 'center center';
 //   }
 // }, [zoom]);
-  return (
+  
+useEffect(() => {
+    if (iframeRef.current && stateEtiquetteHtml) {
+      const iframe = iframeRef.current;
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      
+      if (iframeDoc) {
+        iframeDoc.open();
+        iframeDoc.write(stateEtiquetteHtml);
+        iframeDoc.close();
+      }
+    }
+  }, [stateEtiquetteHtml]);
+return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-[95vw] w-[95vw] h-[80vh] min-w-[800px] min-h-[500px] bg-white rounded-lg shadow-xl border-0 p-0 overflow-hidden">
         <div className="p-6 h-full flex flex-col overflow-hidden">
@@ -152,10 +157,25 @@ const iframeRef = useRef<HTMLIFrameElement>(null);
           }`}
           style={{
             transformOrigin: transformOrigin,
-            pointerEvents: zoom ? 'auto' : 'none', // allows interaction when zoomed
+            // pointerEvents: zoom ? 'auto' : 'none', // allows interaction when zoomed
+               width: '100%',
+          height: '100%',
           }}
-                      dangerouslySetInnerHTML={{ __html: stateEtiquetteHtml }}
-                    />
+                      // dangerouslySetInnerHTML={{ __html: stateEtiquetteHtml }}
+                    >
+                        <iframe
+        ref={iframeRef}
+        className="w-full h-full border-0"
+        title="Etiquette Preview"
+        sandbox="allow-scripts allow-same-origin"
+        style={{
+          width: '100%',
+          height: '100%',
+          border: 'none',
+         pointerEvents: zoom ? 'none' : 'auto',
+        }}
+      />
+                    </div>
                   )}
              
       {/* <iframe

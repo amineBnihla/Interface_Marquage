@@ -57,6 +57,7 @@ export default function Login() {
        // Simulate login delay
        const res =  await loginUser({username, password})
        if(res.success){
+        console.log(res.data)
            router.push('/')
            return
           }

@@ -12,11 +12,14 @@ import { SortieData } from "@/types"
 interface ModificationDialogProps {
   isOpen: boolean
   onClose: () => void
+    setTempCaliber:(value:string)=>void,
+  tempCaliber:string,
   sortie: SortieData
   initialData: {
     caliber: string
     fruitCount: number
-  }
+  },
+
   availableCalibers: Calibre[]
   loading?: boolean
   error?: string | null
@@ -25,12 +28,14 @@ interface ModificationDialogProps {
 export function ModificationDialog({
   isOpen,
   onClose,
+  setTempCaliber,
+  tempCaliber,
   sortie,
   initialData,
   availableCalibers,
   loading
 }: ModificationDialogProps) {
-  const [tempCaliber, setTempCaliber] = useState(initialData.caliber)
+  // const [tempCaliber, setTempCaliber] = useState(initialData.caliber)
   const [tempFruitCount, setTempFruitCount] = useState(initialData.fruitCount)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)

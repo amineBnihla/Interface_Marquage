@@ -1,18 +1,23 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Toaster } from 'sonner'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'Marquage',
+  description: 'Marquage packone',
+  generator: 'Agridata',
 }
 
-export default function RootLayout({
+export default  function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+
+    
+
   return (
     <html lang="en">
       <body>{children}

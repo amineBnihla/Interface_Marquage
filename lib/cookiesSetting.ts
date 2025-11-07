@@ -10,7 +10,9 @@ const cookieSession = await cookies()
     httpOnly:true,
     maxAge: 60 * 60 * 24 * 7, // 7 days from now
     sameSite: "lax",
-    secure: process.env.NODE_ENV == "production",
+    secure: false,
+    path:"/",
+    domain:undefined
   })
 
 }
