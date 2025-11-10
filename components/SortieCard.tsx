@@ -104,35 +104,12 @@ console.log("Temp caliber changed:", tempCaliber)
       .fill(null)
       .map((_, index) => {
          let ticketHtml = htlmGene.data.replace('{{ numero_batch }}', index + 1);
-        
-        // Remove <style> tags and their content
-        ticketHtml = ticketHtml.replace(/<style[\s\S]*?<\/style>/gi, '');
-        
-        // Remove <meta> and <title> tags
-        ticketHtml = ticketHtml.replace(/<meta[\s\S]*?>/gi, '');
-        ticketHtml = ticketHtml.replace(/<title[\s\S]*?<\/title>/gi, '');
-        
+    
         return ticketHtml;
       });
 
     // Detect orientation
-    const tempDiv = document.createElement('div');
-    tempDiv.style.position = 'absolute';
-    tempDiv.style.visibility = 'hidden';
-    tempDiv.innerHTML = tickets[0] || '';
-    document.body.appendChild(tempDiv);
-    
-    const labelContainer = tempDiv.querySelector('.label-container');
-    let isLandscape = false;
-    
-    if (labelContainer) {
-      const computedStyle = window.getComputedStyle(labelContainer);
-      const width = parseFloat(computedStyle.width);
-      const height = parseFloat(computedStyle.height);
-      isLandscape = width > height;
-    }
-    
-    document.body.removeChild(tempDiv);
+
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -152,56 +129,15 @@ console.log("Temp caliber changed:", tempCaliber)
               margin: 0 !important;
               padding: 0 !important;
               width: 100%;
+                  display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+              flex-direction: column !important;
               background-color: white !important;
             }
             
-            /* Recreate label styles */
-            .label-container {
-              width: 6.8cm;
-              height: 4.3cm;
-              background-color: white;
-              box-sizing: border-box;
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              padding: 0.1cm;
-              box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-              margin: 0 auto;
-            }
-
-            .label-table {
-              width: 100%;
-              border-collapse: collapse;
-              border: 0.5px solid black;
-              font-size: 6px;
-              font-family: Arial, Helvetica, sans-serif;
-            }
-
-            .label-table td {
-              border: 0.25px solid black;
-              padding: 0.2em 0.4em;
-              vertical-align: middle;
-            }
-
-            .label-table td:nth-child(1),
-            .label-table td:nth-child(3) {
-              font-weight: bold;
-              width: 15%; 
-            }
-
-            .label-table td:nth-child(2),
-            .label-table td:nth-child(4) {
-              width: 35%;
-            }
-            
-            .full-width-cell {
-              text-align: center;
-              padding: 0.3em;
-            }
-            
             .ticket-page {
-              width: fit-content;
-              min-width: 8cm;
+            height:100vh;
               padding: 20px;
               page-break-after: always;
               page-break-inside: avoid;
@@ -223,16 +159,7 @@ console.log("Temp caliber changed:", tempCaliber)
                 size: auto;
               }
               
-              .ticket-page {
-                page-break-after: always;
-                width: fit-content;
-                min-width: 8cm;
-                display: flex !important;
-              }
-              
-              .ticket-page:last-child {
-                page-break-after: auto;
-              }
+              .
             }
           </style>
           </style>
