@@ -1,7 +1,31 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+
+interface PaletteRow {
+  numver: string | number;
+  refpro: string | number;
+  numpal: string | number;
+  dTeDep: string;
+  colpal: string | number;
+  nomLign: string | number;
+  nomEmb: string | number;
+  numlot: string | number;
+  nomMarq: string;
+  calibr: string | number;
+  nbrfru: string | number;
+  nomcat: string;
+  nbcolis: string | number;
+  pdsbru: string | number;
+  pdsChoosen: string | number;
+  numbdq: string | number;
+  numdos: string | number;
+  dtepal: string;
+  typtrs: string;
+  nomCl: string;
+  numpo: string | number;
+}
 
 export async function generatePDF(
-  rows: any[], 
+  rows: PaletteRow[], 
   dateStart: string | null, 
   dateEnd: string | null
 ): Promise<Uint8Array> {
@@ -12,15 +36,14 @@ export async function generatePDF(
   const courierFont = await pdfDoc.embedFont(StandardFonts.Courier);
 
   // Page settings - LANDSCAPE A4
-  const PAGE_WIDTH = 841.89;  // A4 Landscape width
-  const PAGE_HEIGHT = 595.28; // A4 Landscape height
+  const PAGE_WIDTH = 841.89;
+  const PAGE_HEIGHT = 595.28;
   const MARGIN = 20;
-  const ROW_HEIGHT = 14;
-  const HEADER_BOX_HEIGHT = 80;
-  const TABLE_HEADER_HEIGHT = 30;
+  const ROW_HEIGHT = 12;
+  const HEADER_BOX_HEIGHT = 70;
 
   let page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
-  let yPosition = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN;
+  let yPosition = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN - 15;
   let currentPageNumber = 1;
 
   // Helper: Draw text safely
@@ -31,176 +54,196 @@ export async function generatePDF(
     options: any = {}
   ): void => {
     try {
-      const safeText = String(text || "").substring(0, 150);
+      const safeText = String(text || "").substring(0, 200);
       page.drawText(safeText, {
         x,
         y,
         size: options.size || 7,
         font: options.font || helveticaFont,
         color: options.color || rgb(0, 0, 0),
-        maxWidth: options.maxWidth
+        maxWidth: options.maxWidth,
+        lineHeight: options.lineHeight || options.size || 7
       });
     } catch (err) {
       console.warn("Error drawing text:", err);
     }
   };
 
-  // Draw header box (top section)
+  // Draw header box
   const drawHeaderBox = (): void => {
     const headerY = PAGE_HEIGHT - MARGIN;
+    const boxWidth = PAGE_WIDTH - (MARGIN * 2);
     
     // Outer border
     page.drawRectangle({
       x: MARGIN,
       y: headerY - HEADER_BOX_HEIGHT,
-      width: PAGE_WIDTH - (MARGIN * 2),
+      width: boxWidth,
       height: HEADER_BOX_HEIGHT,
       borderColor: rgb(0, 0, 0),
       borderWidth: 1.5
     });
 
-    // Left section (empty space for logo)
+    // Left section (logo space) - vertical line
     page.drawLine({
-      start: { x: 250, y: headerY },
-      end: { x: 250, y: headerY - HEADER_BOX_HEIGHT },
+      start: { x: MARGIN + 220, y: headerY },
+      end: { x: MARGIN + 220, y: headerY - HEADER_BOX_HEIGHT },
       thickness: 1.5,
       color: rgb(0, 0, 0)
     });
 
-    // Right info section border
+    // Right info section - vertical line
+    const rightSectionX = PAGE_WIDTH - 260;
     page.drawLine({
-      start: { x: PAGE_WIDTH - 280, y: headerY },
-      end: { x: PAGE_WIDTH - 280, y: headerY - HEADER_BOX_HEIGHT },
+      start: { x: rightSectionX, y: headerY },
+      end: { x: rightSectionX, y: headerY - HEADER_BOX_HEIGHT },
       thickness: 1.5,
       color: rgb(0, 0, 0)
     });
 
-    // Main title
-    drawText("LISTE DES PALETTES PAR VERSEMENT", PAGE_WIDTH / 2 - 140, headerY - 45, {
-      size: 18,
+    // Main title - centered
+    const title = "LISTE DES PALETTES PAR VERSEMENT";
+    const titleWidth = title.length * 7.5;
+    drawText(title, ((PAGE_WIDTH - titleWidth) / 2)-50, headerY - 40, {
+      size: 16,
       font: helveticaBold
     });
 
-    // Right section - Reference
-    const rightX = PAGE_WIDTH - 260;
-    drawText("Réf:", rightX, headerY - 20, {
-      size: 9,
+    // Right section content
+    const rightX = rightSectionX + 12;
+    
+    // Reference line
+    drawText("Réf:", rightX, headerY - 15, {
+      size: 8,
       font: helveticaBold
     });
-    drawText("LISTE DES PALETTES PAR VERSEMENT", rightX + 30, headerY - 20, {
-      size: 8
+    drawText("LISTE DES PALETTES PAR VERSEMENT", rightX + 25, headerY - 15, {
+      size: 7
     });
 
-    // Horizontal line in right section
+    // Horizontal separator 1
     page.drawLine({
-      start: { x: PAGE_WIDTH - 280, y: headerY - 28 },
-      end: { x: PAGE_WIDTH - MARGIN, y: headerY - 28 },
+      start: { x: rightSectionX, y: headerY - 23 },
+      end: { x: PAGE_WIDTH - MARGIN, y: headerY - 23 },
       thickness: 1,
       color: rgb(0, 0, 0)
     });
 
-    // Date/Time
-    const currentDate = new Date().toLocaleDateString('fr-FR');
+    // Date and time
+    const currentDate = new Date().toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
     const currentTime = new Date().toLocaleTimeString('fr-FR', { 
       hour: '2-digit', 
       minute: '2-digit' 
     });
     
-    drawText("Édite le:", rightX, headerY - 45, {
-      size: 9,
+    drawText("Édite le:", rightX, headerY - 38, {
+      size: 8,
       font: helveticaBold
     });
-    drawText(currentDate, rightX + 50, headerY - 45, {
-      size: 9
+    drawText(currentDate, rightX + 45, headerY - 38, {
+      size: 8
     });
-    drawText(currentTime, rightX + 120, headerY - 45, {
-      size: 9
+    drawText(currentTime, rightX + 110, headerY - 38, {
+      size: 8
     });
 
-    // Horizontal line
+    // Horizontal separator 2
     page.drawLine({
-      start: { x: PAGE_WIDTH - 280, y: headerY - 53 },
-      end: { x: PAGE_WIDTH - MARGIN, y: headerY - 53 },
+      start: { x: rightSectionX, y: headerY - 46 },
+      end: { x: PAGE_WIDTH - MARGIN, y: headerY - 46 },
       thickness: 1,
       color: rgb(0, 0, 0)
     });
 
     // Page number
-    drawText(`Page    ${currentPageNumber}/75`, rightX, headerY - 70, {
-      size: 9
+    drawText(`Page`, rightX, headerY - 60, {
+      size: 8
+    });
+    drawText(`${currentPageNumber}/75`, rightX + 35, headerY - 60, {
+      size: 8
     });
   };
 
-  // Table column configuration - matching original exactly
+  // Table column configuration - exact match to image
   const columns = [
-    { header: "N°Vers", width: 35, key: "numver" },
-    { header: "Ref Pro", width: 40, key: "refpro" },
-    { header: "N°Pal", width: 35, key: "numpal" },
-    { header: "Date", width: 55, key: "dTeDep" },
-    { header: "ColPal", width: 40, key: "colpal" },
-    { header: "Ligne", width: 35, key: "ligne" },
-    { header: "Emballage", width: 55, key: "emballage" },
-    { header: "N°Lot", width: 35, key: "numlot" },
-    { header: "Marque", width: 55, key: "marque" },
-    { header: "Cal.", width: 35, key: "calibr" },
-    { header: "NbrF", width: 35, key: "nbrfru" },
-    { header: "Cat", width: 35, key: "nomcat" },
-    { header: "Colis", width: 40, key: "colis" },
-    { header: "Export\nCom.", width: 40, key: "pdsbru" },
-    { header: "P. Brut", width: 45, key: "pdsChoosen" },
-    { header: "BDQ", width: 35, key: "bdq" },
-    { header: "Dossier", width: 45, key: "dossier" },
-    { header: "DteDep.", width: 50, key: "dtedep" },
-    { header: "Transport", width: 55, key: "transport" },
-    { header: "Client", width: 65, key: "nomCl" },
-    { header: "N°TO", width: 35, key: "numpo" }
+    { header: "N°Vers", width: 32, key: "numver", align: "center" },
+    { header: "Ref Pro", width: 35, key: "refpro", align: "center" },
+    { header: "N°Pal", width: 30, key: "numpal", align: "center" },
+    { header: "Date", width: 50, key: "dtepal", align: "left" },
+    { header: "ColPal", width: 35, key: "colpal", align: "center" },
+    { header: "Ligne", width: 32, key: "nomLign", align: "center" },
+    { header: "Emballage", width: 52, key: "nomEmb", align: "left" },
+    { header: "N°Lot", width: 32, key: "numlot", align: "center" },
+    { header: "Marque", width: 50, key: "nomMarq", align: "left" },
+    { header: "Cal.", width: 28, key: "calibr", align: "center" },
+    { header: "NbrF", width: 32, key: "nbrfru", align: "center" },
+    { header: "Cat", width: 28, key: "nomcat", align: "center" },
+    { header: "Colis", width: 32, key: "nbcolis", align: "center" },
+    { header: "Export\nCom.", width: 35, key: "pdsbru", align: "center" },
+    { header: "P. Brut", width: 40, key: "pdsChoosen", align: "right" },
+    { header: "BDQ", width: 28, key: "numbdq", align: "center" },
+    { header: "Dossier", width: 38, key: "numdos", align: "center" },
+    { header: "DteDep.", width: 48, key: "dTeDep", align: "left" },
+    { header: "Transport", width: 52, key: "typtrs", align: "left" },
+    { header: "Client", width: 60, key: "nomCl", align: "left" },
+    { header: "N°TO", width: 32, key: "numpo", align: "center" }
   ];
 
   const tableWidth = columns.reduce((sum, col) => sum + col.width, 0);
-  const startX = MARGIN + 10;
+  const startX = MARGIN;
 
   // Draw table header
   const drawTableHeader = (): void => {
     const headerStartY = yPosition;
+    const headerHeight = 20;
 
     // Header background
     page.drawRectangle({
-      x: startX - 5,
-      y: headerStartY - 22,
-      width: tableWidth + 10,
-      height: 24,
-      color: rgb(0.95, 0.95, 0.95),
+      x: startX,
+      y: headerStartY - headerHeight,
+      width: tableWidth,
+      height: headerHeight,
+      color: rgb(0.92, 0.92, 0.92),
       borderColor: rgb(0, 0, 0),
       borderWidth: 1
     });
 
-    // Draw column headers
+    // Draw column headers with vertical lines
     let xPos = startX;
     columns.forEach((col, index) => {
-      // Vertical separator lines
+      // Vertical separator line
       if (index > 0) {
         page.drawLine({
-          start: { x: xPos - 2, y: headerStartY + 2 },
-          end: { x: xPos - 2, y: headerStartY - 22 },
+          start: { x: xPos, y: headerStartY },
+          end: { x: xPos, y: headerStartY - headerHeight },
           thickness: 0.5,
-          color: rgb(0.5, 0.5, 0.5)
+          color: rgb(0, 0, 0)
         });
       }
 
       // Header text
       const lines = col.header.split('\n');
       if (lines.length > 1) {
-        drawText(lines[0], xPos + 2, headerStartY - 8, {
-          size: 7,
+        // Multi-line header
+        const text1Width = lines[0].length * 3.5;
+        const text2Width = lines[1].length * 3.5;
+        drawText(lines[0], xPos + (col.width - text1Width) / 2, headerStartY - 8, {
+          size: 6.5,
           font: helveticaBold
         });
-        drawText(lines[1], xPos + 2, headerStartY - 16, {
-          size: 7,
+        drawText(lines[1], xPos + (col.width - text2Width) / 2, headerStartY - 15, {
+          size: 6.5,
           font: helveticaBold
         });
       } else {
-        drawText(col.header, xPos + 2, headerStartY - 12, {
-          size: 7,
+        // Single line header - center aligned
+        const textWidth = col.header.length * 3.5;
+        drawText(col.header, xPos + (col.width - textWidth) / 2, headerStartY - 12, {
+          size: 6.5,
           font: helveticaBold
         });
       }
@@ -208,158 +251,253 @@ export async function generatePDF(
       xPos += col.width;
     });
 
-    yPosition -= 28;
+    // Right border
+    page.drawLine({
+      start: { x: startX + tableWidth, y: headerStartY },
+      end: { x: startX + tableWidth, y: headerStartY - headerHeight },
+      thickness: 1,
+      color: rgb(0, 0, 0)
+    });
+
+    yPosition -= headerHeight + 2;
   };
 
   // Helper: Check if new page needed
   const checkNewPage = (requiredSpace: number): boolean => {
-    if (yPosition < MARGIN + requiredSpace + 30) {
-      // Add page number at bottom of current page
+    if (yPosition < MARGIN + requiredSpace + 40) {
+      // Add page footer
       drawText(
         `Page ${currentPageNumber}`, 
         PAGE_WIDTH / 2 - 20, 
-        MARGIN - 10, 
+        MARGIN - 5, 
         { size: 8 }
       );
       
       // Create new page
       page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
       currentPageNumber++;
-      yPosition = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN;
+      yPosition = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN - 15;
       
-      // Draw header box on new page
       drawHeaderBox();
-      yPosition -= 10;
-      
-      // Redraw table header
+      yPosition -= 15;
       drawTableHeader();
       return true;
     }
     return false;
   };
 
-  // Draw initial header box
+  // Draw initial header and table header
   drawHeaderBox();
-  yPosition -= 10;
-
-  // Draw initial table header
+  yPosition -= 15;
   drawTableHeader();
 
   // Process rows
-  let rowCount = 0;
-  
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     
-    // Check for new page
     checkNewPage(ROW_HEIGHT);
 
-    // Alternate row background (very light)
-    if (rowCount % 2 === 1) {
+    // Alternating row background
+    if (i % 2 === 1) {
       page.drawRectangle({
-        x: startX - 5,
-        y: yPosition - 10,
-        width: tableWidth + 10,
+        x: startX,
+        y: yPosition - ROW_HEIGHT,
+        width: tableWidth,
         height: ROW_HEIGHT,
-        color: rgb(0.98, 0.98, 0.98)
+        color: rgb(0.97, 0.97, 0.97)
       });
     }
 
-    // Draw row data
+    // Draw cell borders and data
     let xPos = startX;
     columns.forEach((col, colIndex) => {
-      let value = row[col.key];
+      // Vertical separator
+      if (colIndex > 0) {
+        page.drawLine({
+          start: { x: xPos, y: yPosition },
+          end: { x: xPos, y: yPosition - ROW_HEIGHT },
+          thickness: 0.3,
+          color: rgb(0.7, 0.7, 0.7)
+        });
+      }
+
+      // Format cell value
+      let value = row[col.key as keyof PaletteRow];
       let displayValue = "";
 
-      // Format value based on type
       if (value !== null && value !== undefined) {
         if (col.key === "pdsChoosen") {
           displayValue = Number(value || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-        } else if (col.key === "datepal") {
-          if (value instanceof Date) {
-            displayValue = value.toLocaleDateString('fr-FR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            });
-          } else {
-            // Try to parse string date
-            const dateStr = String(value);
-            if (dateStr.includes('/') || dateStr.includes('-')) {
-              displayValue = dateStr.substring(0, 10);
-            } else {
-              displayValue = dateStr;
-            }
-          }
+        } else if (col.key === "dTeDep") {
+          displayValue = String(value);
         } else if (col.key === "dtedep") {
           const dateStr = String(value);
-          if (dateStr.length >= 8) {
-            displayValue = dateStr.substring(0, 8);
-          } else {
-            displayValue = dateStr;
-          }
+          displayValue = dateStr.length >= 8 ? dateStr.substring(0, 8) : dateStr;
         } else {
           displayValue = String(value);
         }
       }
 
-      // Truncate if too long
-      const maxChars = Math.floor(col.width / 4.5);
+      // Truncate if needed
+      const maxChars = Math.floor(col.width / 3.8);
       if (displayValue.length > maxChars) {
-        displayValue = displayValue.substring(0, maxChars - 1);
+        displayValue = displayValue.substring(0, maxChars);
       }
 
-      // Draw vertical separator
-      if (colIndex > 0) {
-        page.drawLine({
-          start: { x: xPos - 2, y: yPosition + 2 },
-          end: { x: xPos - 2, y: yPosition - 10 },
-          thickness: 0.3,
-          color: rgb(0.8, 0.8, 0.8)
-        });
+      // Text alignment
+      let textX = xPos + 2;
+      if (col.align === "center") {
+        const textWidth = displayValue.length * 3.2;
+        textX = xPos + (col.width - textWidth) / 2;
+      } else if (col.align === "right") {
+        const textWidth = displayValue.length * 3.2;
+        textX = xPos + col.width - textWidth - 2;
       }
 
-      // Draw text
-      drawText(displayValue, xPos + 2, yPosition - 7, {
-        size: 6.5,
+      drawText(displayValue, textX, yPosition - 8, {
+        size: 6,
         font: courierFont
       });
 
       xPos += col.width;
     });
 
-    // Draw horizontal line after row
+    // Right border
     page.drawLine({
-      start: { x: startX - 5, y: yPosition - 11 },
-      end: { x: startX + tableWidth + 5, y: yPosition - 11 },
-      thickness: 0.2,
-      color: rgb(0.85, 0.85, 0.85)
+      start: { x: startX + tableWidth, y: yPosition },
+      end: { x: startX + tableWidth, y: yPosition - ROW_HEIGHT },
+      thickness: 0.3,
+      color: rgb(0.7, 0.7, 0.7)
+    });
+
+    // Horizontal line after row
+    page.drawLine({
+      start: { x: startX, y: yPosition - ROW_HEIGHT },
+      end: { x: startX + tableWidth, y: yPosition - ROW_HEIGHT },
+      thickness: 0.3,
+      color: rgb(0.8, 0.8, 0.8)
     });
 
     yPosition -= ROW_HEIGHT;
-    rowCount++;
 
-    // Log progress
     if (i > 0 && i % 50 === 0) {
       console.log(`Processed ${i}/${rows.length} rows`);
     }
   }
 
-  // Draw final table border
+  // Bottom table border
+ // Calculate column totals
+  const totalNumPal = rows.length;
+  const totalNbrF = rows.reduce((sum, row) => {
+    const val = Number(row.nbrfru);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+
+  const totalColisSum = rows.reduce((sum, row) => {
+    const val = Number(row.nbcolis);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+
+  const totalExportCom = rows.reduce((sum, row) => {
+    const val = Number(row.pdsbru);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+
+  const totalPoidsBrut = rows.reduce((sum, row) => {
+    const val = Number(row.pdsChoosen);
+    return sum + (isNaN(val) ? 0 : val);
+  }, 0);
+
+  // Check if we need a new page for totals row
+  checkNewPage(ROW_HEIGHT + 5);
+
+  // Draw totals row with thicker top border
+  page.drawLine({
+    start: { x: startX, y: yPosition },
+    end: { x: startX + tableWidth, y: yPosition },
+    thickness: 1.5,
+    color: rgb(0, 0, 0)
+  });
+
+  // Totals row background
   page.drawRectangle({
-    x: startX - 5,
-    y: yPosition,
-    width: tableWidth + 10,
-    height: 0,
-    borderColor: rgb(0, 0, 0),
-    borderWidth: 1.5
+    x: startX,
+    y: yPosition - ROW_HEIGHT - 2,
+    width: tableWidth,
+    height: ROW_HEIGHT + 2,
+    color: rgb(0.95, 0.95, 0.95)
+  });
+
+  // Draw totals in respective columns
+  let xPos = startX;
+  columns.forEach((col, colIndex) => {
+    // Vertical separator
+    if (colIndex > 0) {
+      page.drawLine({
+        start: { x: xPos, y: yPosition },
+        end: { x: xPos, y: yPosition - ROW_HEIGHT - 2 },
+        thickness: 0.3,
+        color: rgb(0.5, 0.5, 0.5)
+      });
+    }
+
+    let totalValue = "";
+    
+    // Display totals only for specific columns
+    if (col.key === "numpal") {
+      totalValue = String(totalNumPal);
+    } else if (col.key === "nbrfru") {
+      totalValue = String(totalNbrF).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    } else if (col.key === "colis") {
+      totalValue = String(totalColisSum).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    } else if (col.key === "pdsbru") {
+      totalValue = String(totalExportCom).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    } else if (col.key === "pdsChoosen") {
+      totalValue = String(totalPoidsBrut).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
+
+    if (totalValue) {
+      let textX = xPos + 2;
+      if (col.align === "center") {
+        const textWidth = totalValue.length * 3.5;
+        textX = xPos + (col.width - textWidth) / 2;
+      } else if (col.align === "right") {
+        const textWidth = totalValue.length * 3.5;
+        textX = xPos + col.width - textWidth - 2;
+      }
+
+      drawText(totalValue, textX, yPosition - 9, {
+        size: 6.5,
+        font: helveticaBold
+      });
+    }
+
+    xPos += col.width;
+  });
+
+  // Right border
+  page.drawLine({
+    start: { x: startX + tableWidth, y: yPosition },
+    end: { x: startX + tableWidth, y: yPosition - ROW_HEIGHT - 2 },
+    thickness: 0.3,
+    color: rgb(0.5, 0.5, 0.5)
+  });
+
+  yPosition -= ROW_HEIGHT + 2;
+
+  // Bottom table border
+  page.drawLine({
+    start: { x: startX, y: yPosition },
+    end: { x: startX + tableWidth, y: yPosition },
+    thickness: 1.5,
+    color: rgb(0, 0, 0)
   });
 
   // Add final page number
   drawText(
     `Page ${currentPageNumber}`, 
     PAGE_WIDTH / 2 - 20, 
-    MARGIN - 10, 
+    MARGIN - 5, 
     { size: 8 }
   );
 
@@ -370,66 +508,67 @@ export async function generatePDF(
   }, 0);
 
   const totalColis = rows.reduce((sum, row) => {
-    const val = Number(row.colis);
+    const val = Number(row.nbcolis);
     return sum + (isNaN(val) ? 0 : val);
   }, 0);
 
   // Add summary page
   page = pdfDoc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
   currentPageNumber++;
-  yPosition = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN;
+  yPosition = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN - 15;
   
   drawHeaderBox();
-  yPosition -= 40;
+  yPosition -= 50;
 
   // Summary box
   page.drawRectangle({
-    x: MARGIN + 20,
-    y: yPosition - 100,
-    width: 400,
-    height: 120,
-    color: rgb(0.97, 0.97, 1),
+    x: MARGIN + 30,
+    y: yPosition - 110,
+    width: 450,
+    height: 130,
+    color: rgb(0.95, 0.97, 1),
     borderColor: rgb(0, 0, 0),
     borderWidth: 1.5
   });
 
-  drawText("RÉCAPITULATIF", MARGIN + 30, yPosition - 20, {
+  drawText("RÉCAPITULATIF", MARGIN + 45, yPosition - 25, {
     size: 14,
     font: helveticaBold
   });
 
-  drawText(`Nombre total de palettes: ${rows.length}`, MARGIN + 30, yPosition - 45, {
+  drawText(`Nombre total de palettes: ${rows.length}`, MARGIN + 45, yPosition - 55, {
     size: 10,
     font: helveticaBold
   });
 
   drawText(
     `Poids brut total: ${totalPoids.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} Kg`, 
-    MARGIN + 30, 
-    yPosition - 65, 
+    MARGIN + 45, 
+    yPosition - 75, 
     {
       size: 10,
       font: helveticaBold
     }
   );
 
-  drawText(`Nombre total de colis: ${totalColis}`, MARGIN + 30, yPosition - 85, {
-    size: 10
+  drawText(`Nombre total de colis: ${totalColis}`, MARGIN + 45, yPosition - 95, {
+    size: 9
   });
 
-  drawText(
-    `Période: ${dateStart || 'N/A'} au ${dateEnd || 'N/A'}`, 
-    MARGIN + 30, 
-    yPosition - 105, 
-    {
-      size: 9,
-      color: rgb(0.3, 0.3, 0.3)
-    }
-  );
+  if (dateStart || dateEnd) {
+    drawText(
+      `Période: ${dateStart || 'N/A'} au ${dateEnd || 'N/A'}`, 
+      MARGIN + 45, 
+      yPosition - 115, 
+      {
+        size: 8,
+        color: rgb(0.4, 0.4, 0.4)
+      }
+    );
+  }
 
-  console.log(`PDF generated with ${currentPageNumber} pages`);
+  console.log(`PDF generated with ${currentPageNumber} pages, ${rows.length} rows`);
 
-  // Generate and return PDF bytes
   const pdfBytes = await pdfDoc.save();
   return pdfBytes;
 }
