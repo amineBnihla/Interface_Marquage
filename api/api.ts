@@ -1,6 +1,6 @@
 import {api} from "@/api/index"
 import { getSessionCookie, removeCookie, setSessionCookie } from "@/lib/cookiesSetting"
-import { headers } from "next/headers"
+import { AxiosError } from "axios"
 // Types for API responses
 export interface Poste {
   numposte: string
@@ -120,7 +120,10 @@ export async function generateEtiquette(params: any) {
        if (res.status !== 200) throw new Error('Failed to generate Ettiquete');
        return {success:true,message:"Ettiquette genrated successfully",data:res.data};
      }catch(error){
-   return {success:false,message:error?.response?.data.message || "Ettiquette genrated successfully"};
+      if (error instanceof AxiosError) {
+        return { success: false, message: error.response?.data.message || "An error occurred" };
+      }
+      return { success: false, message: "An unexpected error occurred" };
      }
 }
 
@@ -129,7 +132,7 @@ export async function loginUser({username,password}:{username:string,password:st
 try{
   const res = await api.post('packone/api/auth',{loginOrMail:username,password});
   if (res.status !== 200) {
-    return {succuss:false,message:"Failed to logged in"}
+    return {success:false,message:"Failed to logged in"}
   }
   console.log(res.headers)
   const authToken = res.headers['authorization'];
@@ -138,8 +141,10 @@ await setSessionCookie(authToken)
   return  {success:true,data:res.data};
 
 }catch(error){
-  console.log(error)
-   return {succuss:false,message: error?.response.data.message || "Something went wrong"}
+  if (error instanceof AxiosError) {
+    return { success: false, message: error.response?.data.message || "An error occurred" };
+  }
+  return { success: false, message: "An unexpected error occurred" };
 }
 
 }
