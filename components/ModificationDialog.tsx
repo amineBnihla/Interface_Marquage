@@ -74,8 +74,11 @@ export function ModificationDialog({
   useEffect(() => {
     setTempCaliber(initialData.caliber)
     setTempFruitCount(initialData.fruitCount)
+    
   }, [initialData])
-
+useEffect(()=>{
+  resetData()
+},[isOpen])
 const [openCalender, setOpenCalender] = useState<boolean>(false)
 // function isValidDate(date: Date | undefined) {
 //   if (!date) {

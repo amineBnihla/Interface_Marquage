@@ -46,7 +46,7 @@ calibres,
    const currCalibr = calibres.find((c)=> c.codcal == sortie.code_calibre)
    console.log("Current Calibr:", currCalibr)
     const currentVersement = versements[currentVersementIndex]
-    const [dateRecolte, setDateRecolte] = useState<string | null>(currentVersement.date_recolte || null)
+    const [dateRecolte, setDateRecolte] = useState<string | null>(currentVersement.date_recolte|| null)
     const [dateVersement, setDateVersement] = useState<string | null>(currentVersement.dte_versement || null)
     const [poidsRecolte, setPoidsRecolte] = useState<string | null>(sortie.poids.toString() || null)
      const [codeProducteur, setCodeProducteur] = useState<string | null>(currentVersement.code_producteur || null)
@@ -101,7 +101,7 @@ console.log("Calibr state:", calibr)
 
                   }
                 function resetData(){
-    setDateRecolte(currentVersement.date_recolte || null)
+    setDateRecolte(currentVersement.date_recolte|| null)
     setDateVersement(currentVersement.dte_versement || null)
     setPoidsRecolte(sortie.poids.toString() || null)
     setCodeProducteur(currentVersement.code_producteur || null)
