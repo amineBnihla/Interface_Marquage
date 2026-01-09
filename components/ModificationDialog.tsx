@@ -1,6 +1,6 @@
 "use client"
 
-import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
@@ -8,12 +8,32 @@ import { Edit, RotateCcw } from "lucide-react"
 import { useState, useEffect } from "react"
 import { updateLigneCalibre, type Calibre } from "@/api/api"
 import { SortieData } from "@/types"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { CalendarIcon } from "lucide-react"
+import { formatDate } from "@/lib/helpers"
+import { DialogTitle } from "@radix-ui/react-dialog"
 
 interface ModificationDialogProps {
   isOpen: boolean
   onClose: () => void
     setTempCaliber:(value:string)=>void,
+    dateRecolte:string,
+    setDateRecolte:(value:string)=>void,
+       dateVersement:string,
+    setDateVersement:(value:string)=>void,
+    poidsRecolte:string,
+    setPoidsRecolte:(value:string)=>void,
+    resetData:()=>void,
   tempCaliber:string,
+  calibr:string,
+  setCalibr:(value:string)=>void,
+    codeProducteur:string,
+  setCodeProducteur:(value:string)=>void,
   sortie: SortieData
   initialData: {
     caliber: string
@@ -30,6 +50,17 @@ export function ModificationDialog({
   onClose,
   setTempCaliber,
   tempCaliber,
+  dateRecolte,
+  setDateRecolte,
+    dateVersement,
+  setDateVersement,
+  calibr,
+  setCalibr,
+  resetData,
+   codeProducteur,
+  setCodeProducteur,
+  poidsRecolte,
+  setPoidsRecolte,
   sortie,
   initialData,
   availableCalibers,
@@ -39,10 +70,19 @@ export function ModificationDialog({
   const [tempFruitCount, setTempFruitCount] = useState(initialData.fruitCount)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
   useEffect(() => {
     setTempCaliber(initialData.caliber)
     setTempFruitCount(initialData.fruitCount)
   }, [initialData])
+
+const [openCalender, setOpenCalender] = useState<boolean>(false)
+// function isValidDate(date: Date | undefined) {
+//   if (!date) {
+//     return false
+//   }
+//   return !isNaN(date.getTime())
+// }
 
 
  const handleModificationSave = async () => {
@@ -57,6 +97,7 @@ export function ModificationDialog({
       })
       sortie.code_calibre = calibre.codcal
       sortie.nbrfruit = tempFruitCount.toString()
+  
       onClose()
     } catch (err) {
       // console.log(err.message)
@@ -65,12 +106,20 @@ export function ModificationDialog({
   }
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
+   
       <DialogContent className="sm:max-w-md bg-white rounded-lg shadow-xl border-0 p-6">
-        <div className="h-full flex flex-col">
-          <div className="flex items-center justify-center mb-6">
+
+        <DialogHeader>
+             <DialogTitle>
+         <div className="flex items-center justify-center mb-6">
+        
             <Edit className="h-5 w-5 text-[#015571] mr-2" />
             <h2 className="text-lg font-semibold text-gray-900">Modifier les Paramètres</h2>
           </div>
+      </DialogTitle>
+        </DialogHeader>
+        <div className="h-full flex flex-col">
+         
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
@@ -79,7 +128,7 @@ export function ModificationDialog({
           )}
 
           <div className="space-y-4 mb-6">
-            <div>
+            <div className="hidden">
               <label className="block text-sm font-medium text-gray-700 mb-2">Calibre</label>
               <Select 
                 value={tempCaliber} 
@@ -98,7 +147,28 @@ export function ModificationDialog({
                 </SelectContent>
               </Select>
             </div>
-
+ <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Calibre</label>
+              <Input
+                type="text"
+                value={calibr}
+                onChange={(e) => setCalibr(e.target.value)}
+                className="w-full"
+                disabled={loading || isSaving}
+              />
+            </div>
+             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Code Producteur</label>
+              <Input
+                type="text"
+                value={codeProducteur}
+                onChange={(e) => setCodeProducteur(e.target.value)}
+                placeholder="Ex: 120"
+                className="w-full"
+                min="1"
+                disabled={loading || isSaving}
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de Fruits</label>
               <Input
@@ -111,12 +181,57 @@ export function ModificationDialog({
                 disabled={loading || isSaving}
               />
             </div>
+            <div className="">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Récolte</label>
+               <div className="relative">
+               <Input
+          id="dateRecolte"
+          type="text"
+          value={dateRecolte}
+          placeholder="2025-01-30"
+          className="bg-background pr-10"
+          onChange={(e) => {
+            setDateRecolte(e.target.value)
+          }}
+        />
+            </div>
+            </div>
+             <div className="">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Date Versement</label>
+               <div className="relative">
+               <Input
+          id="dateVersement"
+          type="text"
+          value={dateVersement}
+          placeholder="2025-01-30"
+          className="bg-background pr-10"
+          onChange={(e) => {
+            setDateVersement(e.target.value)
+          }}
+        />
+            </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Poid Net (kg)</label>
+              <Input
+                type="text"
+                value={poidsRecolte}
+                onChange={(e) => setPoidsRecolte(e.target.value)}
+                placeholder="Ex: 120"
+                className="w-full"
+                min="1"
+                disabled={loading || isSaving}
+              />
+            </div>
           </div>
 
           <div className="flex space-x-3">
             <Button
               variant="outline"
-              onClick={onClose}
+              onClick={()=>{
+                onClose()
+                      resetData()
+              }}
               className="flex-1 border-orange-400 text-orange-600 bg-transparent hover:bg-orange-50"
               disabled={loading || isSaving}
             >
@@ -125,6 +240,7 @@ export function ModificationDialog({
             <Button
               variant="ghost"
               onClick={() => {
+                resetData()
                 setTempCaliber(initialData.caliber)
                 setTempFruitCount(initialData.fruitCount)
               }}

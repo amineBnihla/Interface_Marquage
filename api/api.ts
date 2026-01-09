@@ -41,6 +41,7 @@ export interface Versement {
   nom_variete: string
   dte_versement: string
   debut_versement: string
+  date_recolte:string
 }
 
 export interface Client {

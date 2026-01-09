@@ -39,8 +39,19 @@ calibres,
          const [loadingImprimer,setLoadingImrimer] = useState<boolean>()
          const [Ettiloading,setEttiloading] = useState<boolean>()
     const [error,setError] = useState<string>("")
-  // Get current versement
-  const currentVersement = versements[currentVersementIndex]
+
+    // const [dateRecolte, setDateRecolte] = useState<string | null>(null)
+    // Get current versement
+    const currentEtti = etiquettes.find(e => e.idtabetq.toString() === selectedEttiquete)
+   const currCalibr = calibres.find((c)=> c.codcal == sortie.code_calibre)
+   console.log("Current Calibr:", currCalibr)
+    const currentVersement = versements[currentVersementIndex]
+    const [dateRecolte, setDateRecolte] = useState<string | null>(currentVersement.date_recolte || null)
+    const [dateVersement, setDateVersement] = useState<string | null>(currentVersement.dte_versement || null)
+    const [poidsRecolte, setPoidsRecolte] = useState<string | null>(sortie.poids.toString() || null)
+     const [codeProducteur, setCodeProducteur] = useState<string | null>(currentVersement.code_producteur || null)
+     const [calibr, setCalibr] = useState<string | null>(currCalibr?.calibr+"")
+console.log("Calibr state:", calibr)
   const listeDesPas= sortie.listedespas.split(';')
   const nombreEtt = listeDesPas[currentPasIndex]
   // const printInfo = {
@@ -69,16 +80,34 @@ calibres,
   //                 versement_name:currentVersement.numver,
   //   versement_date:currentVersement.dte_versement
   //                 }
-   const currentEtti = etiquettes.find(e => e.idtabetq.toString() === selectedEttiquete)
+   
   const printInfo = {
                     etiquette_id:selectedEttiquete ? +selectedEttiquete : 0, 
                     ...sortie,
                     ...currentVersement,
                     ...clients.find(c => c.idclfin.toString() === selectedClient),
-                    ...calibres.find((c)=> c.codcal == sortie.code_calibre),
-                    ...currentEtti
+                    ...currCalibr,
+                    ...currentEtti,
+                    calibr:calibr || "",
+                    code_producteur:codeProducteur || "",
+                    date_recolte:dateRecolte || "",
+                    dte_versement:dateVersement || "",
+                    poids:poidsRecolte || "",
+                    // date_recolte: dateRecolte ,
+                    // dte_versement: dateRecolte || currentVersement.dte_versement,
+                    // ...{poids: poidsRecolte || sortie.poids || 0},
+                    
+                  
 
                   }
+                function resetData(){
+    setDateRecolte(currentVersement.date_recolte || null)
+    setDateVersement(currentVersement.dte_versement || null)
+    setPoidsRecolte(sortie.poids.toString() || null)
+    setCodeProducteur(currentVersement.code_producteur || null)
+    setCalibr(currCalibr?.calibr != 0 ? currCalibr?.calibr.toString() || null : "0")
+  }
+                
 useEffect(()=>{
 console.log("Temp caliber changed:", tempCaliber)
 },[tempCaliber])
@@ -262,7 +291,7 @@ return etiquetteHtml
     setError("")
     }
    
-    console.log(currentEtti)
+
   return (
     <>
     <Card className="flex-shrink-0 w-80 border border-gray-200 shadow-sm bg-white">
@@ -470,6 +499,17 @@ return etiquetteHtml
                   sortie={sortie}
                   tempCaliber={tempCaliber}
                   setTempCaliber={setTempCaliber}
+                  dateRecolte={dateRecolte || ""}
+                  setDateRecolte={setDateRecolte}
+                  codeProducteur={codeProducteur || ""}
+                  setCodeProducteur={setCodeProducteur}
+                  dateVersement={dateVersement || ""}
+                  setDateVersement={setDateVersement}
+                      calibr={calibr || ""}
+                  setCalibr={setCalibr || ""}
+                  poidsRecolte={poidsRecolte || ""}
+                  setPoidsRecolte={setPoidsRecolte}
+                  resetData={resetData}
                   initialData={{ caliber: tempCaliber || calibres.find((c)=> c.codcal == sortie.code_calibre)?.idcalib.toString() || "", fruitCount: +sortie.nbrfruit }}
                   availableCalibers={calibres}
 
