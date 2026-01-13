@@ -21,25 +21,28 @@ import { DialogTitle } from "@radix-ui/react-dialog"
 interface ModificationDialogProps {
   isOpen: boolean
   onClose: () => void
-    setTempCaliber:(value:string)=>void,
-    dateRecolte:string,
-    setDateRecolte:(value:string)=>void,
-       dateVersement:string,
-    setDateVersement:(value:string)=>void,
+    setTempCaliber:(value:string)=>void
+    dateRecolte:string
+    setDateRecolte:(value:string)=>void
+       dateVersement:string
+    setDateVersement:(value:string)=>void
     poidsRecolte:string,
-    setPoidsRecolte:(value:string)=>void,
-    resetData:()=>void,
-  tempCaliber:string,
-  calibr:string,
-  setCalibr:(value:string)=>void,
-    codeProducteur:string,
-  setCodeProducteur:(value:string)=>void,
+    setPoidsRecolte:(value:string)=>void
+    resetData:()=>void
+  tempCaliber:string
+  calibr:string
+  setCalibr:(value:string)=>void
+    codeProducteur:string
+  setCodeProducteur:(value:string)=>void
+     ggn:string,
+  setGgn:(value:string)=>void
+     variete:string
+  setVariete:(value:string)=>void
   sortie: SortieData
   initialData: {
     caliber: string
     fruitCount: number
-  },
-
+  }
   availableCalibers: Calibre[]
   loading?: boolean
   error?: string | null
@@ -59,6 +62,10 @@ export function ModificationDialog({
   resetData,
    codeProducteur,
   setCodeProducteur,
+   ggn,
+  setGgn,
+  variete,
+  setVariete,
   poidsRecolte,
   setPoidsRecolte,
   sortie,
@@ -79,7 +86,7 @@ export function ModificationDialog({
 useEffect(()=>{
   resetData()
 },[isOpen])
-const [openCalender, setOpenCalender] = useState<boolean>(false)
+// const [openCalender, setOpenCalender] = useState<boolean>(false)
 // function isValidDate(date: Date | undefined) {
 //   if (!date) {
 //     return false
@@ -160,15 +167,36 @@ const [openCalender, setOpenCalender] = useState<boolean>(false)
                 disabled={loading || isSaving}
               />
             </div>
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">GGN</label>
+              <Input
+                type="text"
+                value={ggn}
+                onChange={(e) => setGgn(e.target.value)}
+                className="w-full"
+            
+                disabled={loading || isSaving}
+              />
+            </div>
+              <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sous Variété</label>
+              <Input
+                type="text"
+                value={variete}
+                onChange={(e) => setVariete(e.target.value)}
+                className="w-full"
+               
+                disabled={loading || isSaving}
+              />
+            </div>
              <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Code Producteur</label>
               <Input
                 type="text"
                 value={codeProducteur}
                 onChange={(e) => setCodeProducteur(e.target.value)}
-                placeholder="Ex: 120"
                 className="w-full"
-                min="1"
+              
                 disabled={loading || isSaving}
               />
             </div>
@@ -178,7 +206,6 @@ const [openCalender, setOpenCalender] = useState<boolean>(false)
                 type="number"
                 value={tempFruitCount}
                 onChange={(e) => setTempFruitCount(Number(e.target.value))}
-                placeholder="Ex: 120"
                 className="w-full"
                 min="1"
                 disabled={loading || isSaving}

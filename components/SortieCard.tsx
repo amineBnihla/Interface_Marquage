@@ -51,6 +51,9 @@ calibres,
     const [poidsRecolte, setPoidsRecolte] = useState<string | null>(sortie.poids.toString() || null)
      const [codeProducteur, setCodeProducteur] = useState<string | null>(currentVersement.code_producteur || null)
      const [calibr, setCalibr] = useState<string | null>(currCalibr?.calibr+"")
+          const [variete, setVariete] = useState<string | null>(currentVersement.nom_sous_variete || null)
+           const [ggn, setGgn] = useState<string | null>(currentVersement.ggn_producteur || null)
+
 console.log("Calibr state:", calibr)
   const listeDesPas= sortie.listedespas.split(';')
   const nombreEtt = listeDesPas[currentPasIndex]
@@ -93,6 +96,8 @@ console.log("Calibr state:", calibr)
                     date_recolte:dateRecolte || "",
                     dte_versement:dateVersement || "",
                     poids:poidsRecolte || "",
+                    nom_sous_variete:variete || "",
+                    ggn_producteur:ggn || "",
                     // date_recolte: dateRecolte ,
                     // dte_versement: dateRecolte || currentVersement.dte_versement,
                     // ...{poids: poidsRecolte || sortie.poids || 0},
@@ -101,16 +106,19 @@ console.log("Calibr state:", calibr)
 
                   }
                 function resetData(){
+             
     setDateRecolte(currentVersement.date_recolte|| null)
     setDateVersement(currentVersement.dte_versement || null)
     setPoidsRecolte(sortie.poids.toString() || null)
     setCodeProducteur(currentVersement.code_producteur || null)
     setCalibr(currCalibr?.calibr != 0 ? currCalibr?.calibr.toString() || null : "0")
+    setVariete(currentVersement.nom_sous_variete || null)
+    setGgn(currentVersement.ggn_producteur || null)
   }
                 
 useEffect(()=>{
-console.log("Temp caliber changed:", tempCaliber)
-},[tempCaliber])
+  resetData()
+},[currentVersementIndex])
 
   function handleClientChange(idClient:string){
    setSelectedClient(idClient)
@@ -251,7 +259,6 @@ console.log("Temp caliber changed:", tempCaliber)
      
    async function fetchProducts(){
     const productsRes =  await getProduct()
-    console.log(productsRes)
     setProducts(productsRes)
     }
 
@@ -259,7 +266,7 @@ console.log("Temp caliber changed:", tempCaliber)
   },[])
    
   const generateEtiquetteSorie = async () => {
-    console.log("Generating etiquette with info:", printInfo)
+    
 const etiquetteHtml = await generateEtiquette(printInfo)
 return etiquetteHtml
   }   
@@ -427,9 +434,10 @@ return etiquetteHtml
                 size="lg"
                 className="h-12 w-12 p-0 rounded-full border-2 hover:bg-red-50 hover:border-red-300 bg-transparent"
                 onClick={() => {
-                  const newIndex = (currentVersementIndex - 1 + versements.length) % versements.length
-                  setCurrentVersementIndex(newIndex)
+                  const newIndex = 
+                  setCurrentVersementIndex((prev)=>(prev - 1 + versements.length) % versements.length)
                   // onVersementChange(sortie.id, false)
+                 
                 }}
                 disabled={versements.length === 0}
               >
@@ -444,8 +452,9 @@ return etiquetteHtml
                 className="h-12 w-12 p-0 rounded-full border-2 hover:bg-green-50 hover:border-green-300 bg-transparent"
                 onClick={() => {
                   const newIndex = (currentVersementIndex + 1) % versements.length
-                  setCurrentVersementIndex(newIndex)
+                  setCurrentVersementIndex((prev)=> (prev + 1) % versements.length)
                   // onVersementChange(sortie.id, true)
+                
                 }}
                 disabled={versements.length === 0}
               >
@@ -505,6 +514,10 @@ return etiquetteHtml
                   setCodeProducteur={setCodeProducteur}
                   dateVersement={dateVersement || ""}
                   setDateVersement={setDateVersement}
+                  ggn={ggn || ""}
+                  setGgn={setGgn}
+                  variete={variete || ""}
+                  setVariete={setVariete}
                       calibr={calibr || ""}
                   setCalibr={setCalibr || ""}
                   poidsRecolte={poidsRecolte || ""}

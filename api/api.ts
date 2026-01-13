@@ -42,6 +42,8 @@ export interface Versement {
   dte_versement: string
   debut_versement: string
   date_recolte:string
+  ggn_producteur:string
+  ggn:string
 }
 
 export interface Client {
