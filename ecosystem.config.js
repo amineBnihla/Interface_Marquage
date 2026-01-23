@@ -2,6 +2,7 @@ module.exports = {
   apps: [{
     name: 'nextjs-app',
     script: 'node_modules/next/dist/bin/next',
+    cwd: '/absolute/path/to/your/nextjs/app',
     args: 'start -p 3030',
     instances: 1,
     exec_mode: 'fork',
