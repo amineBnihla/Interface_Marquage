@@ -51,7 +51,7 @@ export async function generatePDF(
      for (let i = 0; i < rows.length; i++) {
        if (testYPosition < MARGIN + ROW_HEIGHT + 40) {
          pages++;
-         testYPosition = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN - 15 - 22;
+         testYPosition  = PAGE_HEIGHT - HEADER_BOX_HEIGHT - MARGIN - 15 - 22;
        }
        testYPosition -= ROW_HEIGHT;
      }

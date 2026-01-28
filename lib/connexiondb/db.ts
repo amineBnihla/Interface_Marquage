@@ -19,7 +19,6 @@ export async function getDB(): Promise<ConnectionPool> {
   if (pool && pool.connected) {
     return pool;
   }
-
   pool = await sql.connect(sqlConfig);
   return pool;
 }
