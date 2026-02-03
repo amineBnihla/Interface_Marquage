@@ -40,9 +40,9 @@ export async function POST(req: Request) {
       .input("typetransport", typetransport)
       .input("hasbdq", hasbdq)
       .execute("sp_PaletteEtat");
-
+   
     const rows = result.recordset;
-    // console.log(rows[0]);
+     console.log(rows[0]);
 
     if (!rows || rows.length === 0) {
       return NextResponse.json({ error: "No data found" }, { status: 404 });
